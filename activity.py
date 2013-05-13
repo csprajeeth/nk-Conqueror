@@ -164,7 +164,8 @@ def travel(char, dst):
     - `char`:
     - `dst`: The node number to travel to
     """
-    
+    if char.is_working():
+        return False
     br = char.visit(outskirts_url)
 
     for form in br.forms():
