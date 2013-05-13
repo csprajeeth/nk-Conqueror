@@ -34,8 +34,8 @@ def L0to1(char, home):
             activity.travel(char, dst)
 
     elif char.money > 90 and char.reputation < 5:
-        activity.work_at_church(char)
-        char.visit(donate_to_church_url)
+        if activity.work_at_church(char):
+            char.visit(donate_to_church_url)
     elif activity.work_in_mine(char, duration=1) or activity.apply_for_job(char) or activity.apply_for_imw(char, duration=1):
        pass
     
