@@ -50,7 +50,7 @@ def L0to1(char, home):
             if form.action.find("action=16") != -1:
                 br["usage"] = str(2)
                 br.submit()
-        
+                break
             
 
 
