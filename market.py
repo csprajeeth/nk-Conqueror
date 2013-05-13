@@ -42,10 +42,10 @@ def get_market_sales(char, item=None):
         raise ValueError("Item is not in database")
     item_code = item_map[item]
 
-    for i in range(0, len(market_data)):
+    for i in range(len(market_data)):
         if market_data[i][0] == item_code:
             start = i
-            while market_data[i][0] == item_code:
+            while i < len(market_data) and market_data[i][0] == item_code:
                 i+=1
             end = i
             return market_data[start:end]

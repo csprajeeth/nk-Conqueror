@@ -108,7 +108,7 @@ class Character():
         - `url`:
         
         Returns:
-        Thr browser after we visit that url
+        The browser after we visit that url
         """
         if self.is_server_under_maint():
             self.login()
