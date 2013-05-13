@@ -48,7 +48,8 @@ def L0to1(char, home):
         br = char.visit(level_up_url)
         for form in br.forms():
             if form.action.find("action=16") != -1:
-                br["usage"] = str(2)
+                form["usage"] = str(2)
+                br.form = form
                 br.submit()
                 break
             
