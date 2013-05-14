@@ -2,6 +2,7 @@ from gameurls import *
 from bs4 import BeautifulSoup
 from gamedata import *
 from datetime import datetime
+from home import Home
 from init import log
 
 import urllib
@@ -42,7 +43,7 @@ class Character():
 
         self.login()
         self.refresh()
-
+        self.home = Home(self)
 
     def get_browser(self):
         """Returns the browser object related to the character
@@ -212,7 +213,7 @@ class Character():
         elif self.activity == 'none':
             self.activity_remaining = 0
         else: #Traveling
-            self.activity_remaining = self.get_time_till_reset()
+            self.activity_remaining = int(self.get_time_till_reset()/60)
 
 
     def update_inventory(self):

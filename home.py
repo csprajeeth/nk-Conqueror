@@ -10,41 +10,19 @@ class Home():
     """ 
     Represent the character's home.
     Has an inventory and an attribute representing money
-    ~ Need to add support for fields
     """
     
-    def __init__(self, username, password, br, opener, login_data, logger):
+    def __init__(self, char):
         """
         """
-        
-        self.poster = opener
-        self.login_data = login_data
-        self.br = br
-        self.username = username
-        self.password = password
-        self.logger = logger
+        self.char = char
 
         self.inventory = [0] * 390
         self.money = None
         self.update_inventory()
 
 
-    def logout(self):
-        """
-        Arguments:
-        - `self`:
-        """
-        self.br.open(game_url+"Deconnexion.php")
-
-
-    def login(self):
-        self.br.open(game_url)
-        self.br.select_form(nr=0)
-        self.br['login'] = self.username
-        self.br['password'] = self.password
-        self.br.submit()
-
-
+ 
     def update_inventory(self):
         """
         Builds an inventory which is in the form of a dictionary where keys are item names
@@ -55,14 +33,14 @@ class Home():
         give it to BeautifulSoup for parsing.
         """
 
-        self.logout()
-        self.login()
+        self.char.logout()
+        self.char.login()
+        self.inventory = [0] * 390
 
         s1 = "textePage[1]['Texte'] = '"
         s2 = "textePage[2] = new"
 
-        br = self.br
-        br.open(myhome_url)
+        br = self.char.visit(myhome_url)
         page = br.response().read()
 
         start = page.find(s1)
@@ -89,9 +67,6 @@ class Home():
         to the character
         
         Arguments:
-        - `br`:
-        - `poster`:
-        - `login_data`:
         - `item`:
         - `quantity`:
         """
@@ -107,21 +82,16 @@ class Home():
         if quantity == -1:
             quantity = self.inventory[item_code] if item_code else self.money
 
-        poster = self.poster
-        login_data = self.login_data
 
-        poster.open(loginform_url, login_data)
-        poster.open(myhome_url)
         transfer_url = game_url + "Action.php?action=69&c=1&type=" + str(item_code)+ "&IDParametre=0"
-
         if item_code == 0: #if its money we are transfering
             self.money -= quantity
             post =  urllib.urlencode({'destination':'transfererPropriete', 'submit':'OK', 'quantite':'100'})
             while quantity > 100:
-                poster.open(transfer_url, post)
+                self.char.visit(transfer_url, post)
                 quantity-=100
 
-        poster.open(transfer_url, urllib.urlencode({'destination':'transfererPropriete', 'submit':'OK', 
+        self.char.visit(transfer_url, urllib.urlencode({'destination':'transfererPropriete', 'submit':'OK', 
                                                     'quantite':str(quantity) }))
         if item_code:
             self.inventory[item_code] -= quantity

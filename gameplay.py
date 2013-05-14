@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import sys
 import thread
 
-def L0to1(char, home):
+def L0to1(char):
 
     #TUTORIAL
     if char.level == 0:
@@ -58,7 +58,7 @@ def L0to1(char, home):
             
 
 
-def itzo_mining(char, home):
+def itzo_mining(char):
 
     #EAT
     myhunger = 0

@@ -145,8 +145,8 @@ def buy(char, item, price = None, quantity=1, block=True):
 
     submit_url = game_url + "Action.php?action=11"
     basket_url = game_url + "Action.php?action=29"
-    poster = char.get_poster()
-    login_data = char.get_login_data()
+    poster = char.get_browser()
+
 
     char.update_inventory()
     prev_count = char.inventory[item_code]
@@ -177,8 +177,7 @@ def buy(char, item, price = None, quantity=1, block=True):
         char.update_inventory()
         money = int(round(char.money * 100,1))
     
-        poster.open(loginform_url, login_data)
-        poster.open(market_url)
+        char.visit(market_url)
         applied = 0 #the number of items in our basket
 
         for sales in buy_window:

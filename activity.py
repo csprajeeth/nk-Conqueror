@@ -135,7 +135,7 @@ def work_at_church(char):
     if char.is_working():
         return False
 
-    br = char.visit((game_url + "Action.php?action=1"))
+    char.visit((game_url + "Action.php?action=1"))
     char.logger.write(log() + " Working at church\n")
     return True
 
@@ -147,8 +147,8 @@ def retreat(char):
     """
     if char.is_working():
         return False
-    br = char.get_browser()
-    br.open(game_url+"Action.php?action=37")
+
+    char.visit(game_url+"Action.php?action=37")
     return True
     
 
