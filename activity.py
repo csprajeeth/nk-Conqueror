@@ -44,8 +44,8 @@ def work_in_mine(char, duration=22, mine=None):
 
     if mine == None:
         for form in br.forms():
-            if form.action.find('t=mine') != -1:
-                form["duree"] = [str(duration)]
+            if "t=mine" in form.action:
+                form["duree"] = [str(duration),]
                 br.form = form
                 br.submit()
                 time.sleep(10)
@@ -54,7 +54,7 @@ def work_in_mine(char, duration=22, mine=None):
 
     else:
         for form in br.forms():
-            if form.action.find('t=mine') != -1 and form.action.find("n="+str(mine)) != -1:
+            if "t=mine" in form.action and "n="+str(mine) in form.action:
                 form["duree"] = [str(duration)]
                 br.form = form 
                 br.submit()
@@ -87,7 +87,7 @@ def apply_for_job(char, job_evaluator=sample_job_evaluator):
 
 
     for form in br.forms():
-        if form.action.find('action=13') != -1: #selects job application form
+        if "action=13" in form.action: #selects job application form
            if int(form.controls[0].value) == choice.formcode:
                br.form = form 
                br.submit()
@@ -113,16 +113,12 @@ def apply_for_imw(char, duration=22):
         duration=22
     br = char.visit(outskirts_url)
 
-    try:
-        for form in br.forms():
-            if form.action.find("action=338") != -1 and form.action.find("t=rmi") !=-1:
-                br.form = form
-                br["duree"] = [str(duration)]
-                br.submit()
-                break
-    except:
-        char.logger.write(log() + "GOT EXCEPTION IN IMW FORM\n")
-        char.logger.write(str(br.response().read()))
+    for form in br.forms():
+        if "action=338" in form.action and "t=rmi" in form.action:
+            br.form = form
+            br["duree"] = [str(duration)]
+            br.submit()
+            break
 
     char.logout()
     time.sleep(5)  #experimental
@@ -169,7 +165,7 @@ def travel(char, dst):
     br = char.visit(outskirts_url)
 
     for form in br.forms():
-        if form.action.find("action=68") != -1:
+        if "action=68" in form.action:
             if int(form.controls[0].value) == dst:
                 br.form = form
                 br.submit()

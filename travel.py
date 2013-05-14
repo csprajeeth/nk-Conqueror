@@ -34,7 +34,7 @@ def get_node_number(char, adjlist):
     br.open(outskirts_url)
     neighbours = []
     for form in br.forms():
-        if form.action.find("action=68") != -1:
+        if "action=68" in form.action:
             neighbours.append(int(form.controls[0].value))
             
     for i in range(0, len(adjlist)):

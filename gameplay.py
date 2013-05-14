@@ -44,10 +44,10 @@ def L0to1(char, home):
     if char.reputation >=5 and char.money > 120 and char.level == 0:
         br = char.visit(town_url)
         soup = BeautifulSoup(br.response().read())
-        level_up_url = townhall_url if soup.title.text.find("ville") != -1 else province_url
+        level_up_url = townhall_url if "ville" in soup.title.text else province_url
         br = char.visit(level_up_url)
         for form in br.forms():
-            if form.action.find("action=16") != -1:
+            if "action=16" in form.action:
                 if level_up_url == province_url:
                     form["usage"] = [str(2),]
                 else:
