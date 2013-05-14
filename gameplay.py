@@ -73,5 +73,5 @@ def itzo_mining(char, home):
     activity.work_in_mine(char, duration=1)
             
     if char.money > 550:
-        char.post(donate_to_town_url, urllib.urlencode({'somme':'500'}))
+        char.visit(donate_to_town_url, urllib.urlencode({'somme':'500'}))
 

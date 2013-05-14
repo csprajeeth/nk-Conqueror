@@ -17,12 +17,9 @@ class Character():
     Represent the character and his various attributes
     """
     
-    def __init__(self, name, password, br, opener, login_data, logger):
+    def __init__(self, name, password, br, logger):
         """
         """
-
-        self.login_data = login_data
-        self.poster = opener
         self.br = br
         self.name = name
         self.password = password
@@ -52,14 +49,6 @@ class Character():
         """
         return self.br
 
-
-    def get_poster(self):
-        """Returns the poster object related to the character
-        
-        Arguments:
-        - `self`:
-        """
-        return self.poster
 
 
     def get_login_data(self):
@@ -97,7 +86,7 @@ class Character():
                 traceback.print_exc(file = self.logger)
 
 
-    def visit(self, url):
+    def visit(self, url, mydata=None):
         """
         A new interface to open any of the game urls
         This method takes care of network issues,
@@ -105,8 +94,8 @@ class Character():
         is visited.
 
         Arguments:
-        - `url`:
-        
+        - `url`: The url to open
+        - `mydata`: The post data
         Returns:
         The browser after we visit that url
         """
@@ -116,7 +105,7 @@ class Character():
         loaded = False
         while loaded == False:
             try:
-                self.br.open(url, timeout=35)
+                self.br.open(url, data=mydata, timeout=35)
                 loaded = True
             except:
                 self.logger.write(log())
@@ -124,17 +113,6 @@ class Character():
                 time.sleep(5)
         return self.br
 
-
-
-    def post(self, url, data):
-        """
-        Arguments:
-        - `self`:
-        - `url`:
-        - `data`:
-        """
-        self.poster.open(loginform_url, self.login_data)
-        self.poster.open(url, data)
 
 
     def logout(self):
@@ -351,10 +329,10 @@ class Character():
         - `price`: 
         - `quantity`:
         """
-
-        self.update_inventory()
         if item not in item_map:
             raise ValueError("Item not in db")
+
+        self.update_inventory()
         if self.inventory[item_map[item]] < quantity:
             raise ValueError("Item not available in sufficient quantity")
         if quantity == -1:
@@ -366,13 +344,8 @@ class Character():
         if change % 10 not in [0,5]:
             raise ValueError("Invalid price. Change must be a multiple of 5")
 
-        poster = self.poster
-        login_data = self.login_data
-
-        poster.open(loginform_url,login_data)
-        poster.open(my_url)
         sale_url = game_url+"Action.php?action=10&type=" + str(item_map[item]) + "&IDParametre=0"
-        poster.open(sale_url, urllib.urlencode({'centimes':str(change), 'submit':'OK', 'prix':str(integer), 
+        self.br.open(sale_url, urllib.urlencode({'centimes':str(change), 'submit':'OK', 'prix':str(integer), 
                                                 'quantite':str(quantity), 'destination':'vendreMarche' }))
         self.inventory[item_map[item]] -= quantity
 
@@ -386,33 +359,28 @@ class Character():
         - `quantity`:
         """
 
-        self.update_inventory()
         if item not in item_map: 
             raise ValueError("Item not in db")
         item_code = item_map[item]
         quantity = int(quantity)
 
+        self.update_inventory()
         if  (item_code and self.inventory[item_code] < quantity) or (~item_code and self.money < quantity):
             raise ValueError("Item not available in sufficient quantity")
 
         if quantity == -1:
             quantity = self.inventory[item_code] if item_code else self.money
 
-        poster = self.poster
-        login_data = self.login_data
 
-        poster.open(loginform_url, login_data)
-        poster.open(my_url)
         transfer_url = game_url + "Action.php?action=69&type=" + str(item_code)+ "&IDParametre=0"
-
         if item_code == 0: #if its money we are transfering
             self.money -= quantity
             post =  urllib.urlencode({'destination':'transfererPropriete', 'submit':'OK', 'quantite':'100'})
             while quantity > 100:
-                poster.open(transfer_url, post)
+                self.br.open(transfer_url, post)
                 quantity-=100
 
-        poster.open(transfer_url, urllib.urlencode({'destination':'transfererPropriete', 'submit':'OK', 
+        self.br.open(transfer_url, urllib.urlencode({'destination':'transfererPropriete', 'submit':'OK', 
                                                     'quantite':str(quantity) }))
         if item_code:
             self.inventory[item_code] -= quantity
