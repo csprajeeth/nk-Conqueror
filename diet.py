@@ -234,8 +234,6 @@ class MinCostDiet():
         leftover = hunger - consumed
         
         self.char.logger.write(log() + " Consumed " + str(consumed) + " hp worth food from inventory. Need to eat " + str(leftover) + " hp points more."+ "\n")
-        if self.char.activity == "traveling": #There is no market on the roads
-            return leftover
 
         while leftover > 0: # we must buy some food from the market
             cost = [] 
@@ -267,6 +265,9 @@ class MinCostDiet():
             self.char.logger.write("leftover: " + str(leftover) + "\n")
             for i in range(0, len(khana)):
                 self.char.logger.write(str(khana[i]) + " " + str(cost[i])  + " " + str(quantity[i]) + " " + str(weight[i])+"\n")
+
+            if len(khana) == 0: #when there is no food available to buy on the market (ex: when on the roads)
+                return leftover
 
             buy_list, cost = self.make_optimal_buy_decision(khana, cost, weight, quantity, leftover)
             self.char.logger.write(str(buy_list) + "\n" + "Cost: " + str(cost) + "\n")

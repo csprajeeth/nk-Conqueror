@@ -33,15 +33,16 @@ def L0to1(char):
         else:
             activity.travel(char, dst)
 
-    elif char.money > 90 and char.reputation < 5:
+    elif char.money > 70 and char.reputation < 5:
         if activity.work_at_church(char):
             char.visit(donate_to_church_url)
+            char.update_stats()
     elif activity.work_in_mine(char, duration=1) or activity.apply_for_job(char) or activity.apply_for_imw(char, duration=1):
        pass
     
 
     #LEVEL UP
-    if char.reputation >=5 and char.money > 120 and char.level == 0:
+    if char.reputation >=5 and char.money > 110 and char.level == 0:
         br = char.visit(town_url)
         soup = BeautifulSoup(br.response().read())
         level_up_url = townhall_url if "ville" in soup.title.text else province_url
