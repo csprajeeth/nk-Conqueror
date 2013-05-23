@@ -125,8 +125,8 @@ def apply_for_imw(char, duration=22):
     char.login()
     result = char.is_working()
     char.logger.write(log() + " IMW Application: " + str(result) + "\n")
-
-
+    return result
+    
 
 def work_at_church(char):
     """

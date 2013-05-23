@@ -5,7 +5,7 @@ healthTable = {
 "You are skinny.":3,
 "You are bony.":2,
 "You are dying.":1,
-"You are dead.":0 
+"You are DEAD":0 
 }
 
 hungerTable = {

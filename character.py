@@ -145,6 +145,7 @@ class Character():
 
 
 
+
     def is_server_under_maint(self):
         """
         Server maintainance interval : 8:59:00 - 9:20:00
@@ -205,6 +206,10 @@ class Character():
         self.health = healthTable[temp2[0].get_text().strip()]
         self.hunger = hungerTable[temp2[1].get_text().strip()]
 
+        if self.health == 0: #you are dead
+            self.visit(game_url+"Action.php?action=36") #Resurrect 
+            return self.update_characteristics() #do everything again
+
         if self.activity != 'none' and self.activity != 'traveling':
             self.activity_remaining = temp1.find('div', {'class' : 'tempsRestant'}).get_text().strip()
             m = re.search('\d+:\d+', self.activity_remaining)
@@ -214,6 +219,7 @@ class Character():
             self.activity_remaining = 0
         else: #Traveling
             self.activity_remaining = int(self.get_time_till_reset()/60)
+
 
 
     def update_inventory(self):

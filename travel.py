@@ -1,6 +1,7 @@
 from gameurls import *
 from collections import deque
 from gamedata import node_map
+from init import log
 
 def load_world_map():
     """
@@ -19,7 +20,7 @@ def load_world_map():
         if len(arr):
             adjlist[int(arr[0])].append(int(arr[1]))
             adjlist[int(arr[1])].append(int(arr[0]))
-
+    file.close()
     return adjlist
 
 
@@ -31,11 +32,11 @@ def get_node_number(char, adjlist):
     """
 
     br = char.get_browser()
-    br.open(outskirts_url)
+    page = br.open(outskirts_url).read()
+
     neighbours = []
-    for form in br.forms():
-        if "action=68" in form.action:
-            neighbours.append(int(form.controls[0].value))
+    for m in re.finditer("(textePage\[0\]\[)(\d+)(\]\[\'Texte\'\] = \')", page, re.IGNORECASE):
+        neighbours.append(int(m.group(2)))
             
     for i in range(0, len(adjlist)):
         if i not in neighbours and len(adjlist[i]): #exclude the neighbours and disconnected nodes
@@ -103,5 +104,5 @@ def get_next_hop(char, destination):
         node = parents[node]
 
     path = path[::-1]
-    print path
+    char.logger.write(log() + str(path) + "\n")
     return path[2] if len(path) >= 3 else path[1]

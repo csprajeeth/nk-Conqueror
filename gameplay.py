@@ -59,7 +59,7 @@ def L0to1(char):
             
 
 
-def itzo_mining(char):
+def gold_farm(char):
 
     #EAT
     myhunger = 0
@@ -73,6 +73,5 @@ def itzo_mining(char):
   #WORK
     activity.work_in_mine(char, duration=1)
             
-    if char.money > 550:
-        char.visit(donate_to_town_url, urllib.urlencode({'somme':'500'}))
+
 
