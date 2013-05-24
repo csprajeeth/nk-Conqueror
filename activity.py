@@ -47,7 +47,7 @@ def apply_for_job(char, evaluator = sample_job_evaluator):
 
 
     result = char.is_working()
-    char.logger.write(log() + " Job Application: " + str(result) + " (" + char.activity + ")" + '\n')
+    char.logger.write(log() + " Job Application: " + str(result) + " (" + str(char.activity) + ")" + '\n')
     return result
 
 
