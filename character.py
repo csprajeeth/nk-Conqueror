@@ -40,10 +40,11 @@ class Character():
         self.charisma = None
         self.reputation = None
         self.mood = None
-
+        
         self.login()
-        self.refresh()
         self.home = Home(self)
+        self.refresh()
+
 
 
 
@@ -285,7 +286,7 @@ class Character():
         self.update_characteristics()
         self.update_inventory()
         self.update_stats()
-        self.home.update_inventory()
+
 
 
     def use(self, item, times=1):
