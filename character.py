@@ -71,6 +71,9 @@ class Character():
                     time.sleep(60)
                 else:
                     logged_in = True
+
+            except SystemExit ,e:
+                thread.exit()
             except:
                 self.logger.write(log())
                 time.sleep(15)
