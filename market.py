@@ -39,7 +39,7 @@ def get_market_sales(char, item=None):
     if item == None:
         return market_data 
     if item not in item_map:
-        raise ValueError("Item is not in database" + str(item))
+        raise ValueError("Item is not in database - " + str(item))
     item_code = item_map[item]
 
     for i in range(len(market_data)):
@@ -94,7 +94,7 @@ def apply_price_filter(sales, price):
 
     elif type(price) is int or type(price) is float:
         if int(round(price*100,1))%10 not in [0,5]:
-            raise ValueError("Invalid price. Change must be a multiple of 5" + str(price))
+            raise ValueError("Invalid price. Change must be a multiple of 5 - " + str(price))
         tprice = int(round(price*100,1))
         for sale in sales:
             if sale[1] == tprice: 
@@ -139,7 +139,7 @@ def buy(char, item, price = None, quantity=1, block=True):
     """
 
     if item not in item_map:
-        raise ValueError("Item is not in the db" + str(item))
+        raise ValueError("Item is not in the db - " + str(item))
 
     item_code = item_map[item]
 

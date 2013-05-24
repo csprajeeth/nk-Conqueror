@@ -45,8 +45,9 @@ def apply_for_job(char, evaluator = sample_job_evaluator):
 
     char.visit(game_url+"Action.php?action=13", urllib.urlencode({"IDOffre":str(job.formcode)}))
 
+
     result = char.is_working()
-    char.logger.write(log() + " Job Application: " + str(result) + '\n')
+    char.logger.write(log() + " Job Application: " + str(result) + " (" + char.activity + ")" + '\n')
     return result
 
 
@@ -86,9 +87,10 @@ def work_in_mine(char, duration=1, mine=None):
             if "n="+str(mine) in url:
                 char.visit(url, urllib.urlencode({'duree':str(duration)}))
                 break
-            
+
+
     result = char.is_working()
-    char.logger.write(log() + " Mine Application: " + str(result) + '\n')
+    char.logger.write(log() + " Mine Application: " + str(result) + " (" + str(char.activity) + ")" + '\n')
     return result
 
 
@@ -118,9 +120,10 @@ def apply_for_imw(char, duration=1):
     
     for url in url_list:
         char.visit(url, urllib.urlencode({'duree':str(duration)}))
+    
 
     result = char.is_working()
-    char.logger.write(log() + " IMW Application: " + str(result) + "\n")
+    char.logger.write(log() + " IMW Application: " + str(result) + " (" + str(char.activity) + ")" + "\n")
     return result
 
 
@@ -137,8 +140,10 @@ def travel(char, dst):
         return False
 
     char.visit(game_url+"Action.php?action=68", urllib.urlencode({"n":str(dst)}))
+
+
     result = char.is_working()
-    char.logger.write(log() + " Traveling to node " + str(dst) + " - " + str(result))
+    char.logger.write(log() + " Traveling to node " + str(dst) + " - " + str(result) + " (" + str(char.activity) + ")" + "\n")
     return result
 
 
@@ -151,7 +156,7 @@ def work_at_church(char):
         return False
 
     char.visit((game_url + "Action.php?action=1"))
-    char.logger.write(log() + " Working at church\n")
+    char.logger.write(log() + " Working at church" + " (" + str(char.activity) + ")" + "\n")
     return True
 
 
@@ -164,6 +169,6 @@ def retreat(char):
         return False
 
     char.visit(game_url+"Action.php?action=37")
-    char.logger.write(log() + "Going into retreat\n")
+    char.logger.write(log() + "Going into retreat" + " (" + str(char.activity) + ")" + "\n")
     return True
     

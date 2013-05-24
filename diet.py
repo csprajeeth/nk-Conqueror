@@ -228,7 +228,7 @@ class MinCostDiet():
 
         for item in food:
             if item not in item_map:
-                raise ValueError("Item not in db")
+                raise ValueError("Item not in db - " + str(item))
 
         consumed = self.consume_inventory_food(food, hunger)
         leftover = hunger - consumed

@@ -297,9 +297,10 @@ class Character():
         self.update_inventory()
         
         if item not in item_map:
-            raise ValueError("Item not in db")
+            raise ValueError("Item not in db - " + str(item))
         if self.inventory[item_map[item]] < times:
-            raise ValueError("Item not available in sufficient quantity")
+            raise ValueError("Item not available in sufficient quantity. item: " + str(item) + " quantity: " + str(quantity))
+
         if times == -1:
             times = self.inventory[item_map[item]]
 
@@ -327,11 +328,11 @@ class Character():
         - `quantity`:
         """
         if item not in item_map:
-            raise ValueError("Item not in db")
+            raise ValueError("Item not in db - " + str(item))
 
         self.update_inventory()
         if self.inventory[item_map[item]] < quantity:
-            raise ValueError("Item not available in sufficient quantity")
+            raise ValueError("Item not available in sufficient quantity. item: " + str(item) + " quantity: " + str(quantity))
         if quantity == -1:
             quantity = self.inventory[item_map[item]]
 
@@ -339,7 +340,7 @@ class Character():
         change = int(round(price*100,1))%100
 
         if change % 10 not in [0,5]:
-            raise ValueError("Invalid price. Change must be a multiple of 5")
+            raise ValueError("Invalid price. Change must be a multiple of 5 " + str(price))
 
         sale_url = game_url+"Action.php?action=10&type=" + str(item_map[item]) + "&IDParametre=0"
         self.br.open(sale_url, urllib.urlencode({'centimes':str(change), 'submit':'OK', 'prix':str(integer), 
@@ -357,13 +358,15 @@ class Character():
         """
 
         if item not in item_map: 
-            raise ValueError("Item not in db")
+            raise ValueError("Item not in db - " + str(item))
+
+
         item_code = item_map[item]
         quantity = int(quantity)
 
         self.update_inventory()
         if  (item_code and self.inventory[item_code] < quantity) or (~item_code and self.money < quantity):
-            raise ValueError("Item not available in sufficient quantity")
+            raise ValueError("Item not available in sufficient quantity. item: " + str(item) + " quantity: " + str(quantity))
 
         if quantity == -1:
             quantity = self.inventory[item_code] if item_code else self.money
