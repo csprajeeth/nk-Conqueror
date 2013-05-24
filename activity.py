@@ -1,10 +1,12 @@
-from  gameurls import *
+import urllib
+import time
+import townhall
+
 from townhall import Job
 from init import log
+from gameurls import *
+from bs4 import BeautifulSoup
 
-import time
-import mechanize
-import townhall
 
 
 def sample_job_evaluator(jobs):
@@ -22,10 +24,35 @@ def sample_job_evaluator(jobs):
                     wage = job.wage
             
     return choice
-    
 
 
-def work_in_mine(char, duration=22, mine=None):
+
+
+def apply_for_job(char, evaluator = sample_job_evaluator):
+    """
+    Applies for a player posted job in the townhall
+    Arguments:
+    - `char`:
+    - `evaluator`: 
+    """
+
+    if char.is_working():
+        return False
+
+    job = evaluator(townhall.get_jobs(char))
+    if job == None:
+        return False
+
+    char.visit(game_url+"Action.php?action=13", urllib.urlencode({"IDOffre":str(job.formcode)}))
+
+    result = char.is_working()
+    char.logger.write(log() + " Job Application: " + str(result) + '\n')
+    return result
+
+
+
+
+def work_in_mine(char, duration=1, mine=None):
     """
     Performs the activity of mining. You can set the duration of the activity
     as well as which mine(node number) to work in
@@ -34,99 +61,87 @@ def work_in_mine(char, duration=22, mine=None):
     - `duration`: the hours to work
     Returns: True if got a spot for mining, False otherwise
     """
+   
     if char.is_working():
         return False
-
-    br = char.visit(outskirts_url)
     if duration not in [1,2,6,10,22]:
-        duration = 22
+        duration = 1
 
+    s1 = "textePage[1]['Texte'] = '"
+    s2 = "textePage[2] = new"
+    page = char.visit(outskirts_url).read()
+    start = page.find(s1)
+    end = page.find(s2)
+    end = page.rfind("'",start,end)
+    start+=len(s1)
+    soup = BeautifulSoup(page[start:end])
+    forms = soup.find_all('form')
+    mine_list = [game_url+form['action'] for form in forms if "t=mine" in form['action']]
 
     if mine == None:
-        for form in br.forms():
-            if "t=mine" in form.action:
-                form["duree"] = [str(duration),]
-                br.form = form
-                br.submit()
-                time.sleep(10)
-                if char.is_working():
-                    break
-
+        for url in mine_list:
+            char.visit(url, urllib.urlencode({'duree':str(duration)}))
     else:
-        for form in br.forms():
-            if "t=mine" in form.action and "n="+str(mine) in form.action:
-                form["duree"] = [str(duration)]
-                br.form = form 
-                br.submit()
-    char.logout()
-    time.sleep(5)  #experimental
-    char.login()
+        for url in mine_list:
+            if "n="+str(mine) in url:
+                char.visit(url, urllib.urlencode({'duree':str(duration)}))
+                break
+            
     result = char.is_working()
     char.logger.write(log() + " Mine Application: " + str(result) + '\n')
     return result
 
 
 
-
-def apply_for_job(char, job_evaluator=sample_job_evaluator):
+def apply_for_imw(char, duration=1):
     """
-    Applies for a player posted job at the townhall.
+    Applies for IMW
     Arguments:
-    - `job_evaluator`: A function that evaluates the job list and
-    returns a job choice or None
-    Returns: True if we got a job that we like, False otherwise
-    """
-    if char.is_working():
-        return False
-
-    br = char.visit(townhall_url)
-    jobs = townhall.get_jobs(br)
-    choice = sample_job_evaluator(jobs)
-    if choice == None:
-        return False
-
-
-    for form in br.forms():
-        if "action=13" in form.action: #selects job application form
-           if int(form.controls[0].value) == choice.formcode:
-               br.form = form 
-               br.submit()
-    char.logout()
-    time.sleep(5)  #experimental
-    char.login()
-    result = char.is_working()
-    char.logger.write(log() + " Job Application: " + str(result) + "\n")
-    return result
-
-
-
-def apply_for_imw(char, duration=22):
-    """
-    Works at the IMW
-    Arguments:
-    - `char`:
     - `duration`:
     """
+
     if char.is_working():
         return False
     if duration not in [1,2,6,10,22]:
-        duration=22
-    br = char.visit(outskirts_url)
+        duration = 1
 
-    for form in br.forms():
-        if "action=338" in form.action and "t=rmi" in form.action:
-            br.form = form
-            br["duree"] = [str(duration)]
-            br.submit()
-            break
+    s1 = "textePage[1]['Texte'] = '"
+    s2 = "textePage[2] = new"
+    page = char.visit(outskirts_url).read()
+    start = page.find(s1)
+    end = page.find(s2)
+    end = page.rfind("'",start,end)
+    start+=len(s1)
+    soup = BeautifulSoup(page[start:end])
+    forms = soup.find_all('form')
+    url_list = [game_url+form['action'] for form in forms if "t=rmi" in form['action']]
+    
+    for url in url_list:
+        char.visit(url, urllib.urlencode({'duree':str(duration)}))
 
-    char.logout()
-    time.sleep(5)  #experimental
-    char.login()
     result = char.is_working()
     char.logger.write(log() + " IMW Application: " + str(result) + "\n")
     return result
-    
+
+
+
+
+def travel(char, dst):
+    """
+    Makes the character travel to the given destination
+    Arguments:
+    - `char`:
+    - `dst`: The node number to travel to
+    """
+    if char.is_working():
+        return False
+
+    char.visit(game_url+"Action.php?action=68", urllib.urlencode({"n":str(dst)}))
+    result = char.is_working()
+    char.logger.write(log() + " Traveling to node " + str(dst) + " - " + str(result))
+    return result
+
+
 
 def work_at_church(char):
     """
@@ -149,27 +164,6 @@ def retreat(char):
         return False
 
     char.visit(game_url+"Action.php?action=37")
+    char.logger.write(log() + "Going into retreat\n")
     return True
     
-
-
-def travel(char, dst):
-    """
-    Makes the character travel to the given destination
-    Arguments:
-    - `char`:
-    - `dst`: The node number to travel to
-    """
-    if char.is_working():
-        return False
-    br = char.visit(outskirts_url)
-
-    for form in br.forms():
-        if "action=68" in form.action:
-            if int(form.controls[0].value) == dst:
-                br.form = form
-                br.submit()
-    char.logout()
-    time.sleep(5)  #experimental
-    char.login()
-    return char.is_working()

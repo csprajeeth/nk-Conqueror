@@ -8,10 +8,10 @@ from init import log
 import urllib
 import re
 import time
-import random
 import traceback
 import sys
 import urllib2
+import thread
 
 class Character():
     """
@@ -45,20 +45,12 @@ class Character():
         self.refresh()
         self.home = Home(self)
 
+
+
     def get_browser(self):
         """Returns the browser object related to the character
         """
         return self.br
-
-
-
-    def get_login_data(self):
-        """Returns the login data related to the character
-        
-        Arguments:
-        - `self`:
-        """
-        return self.login_data
 
 
 
@@ -70,21 +62,20 @@ class Character():
         logged_in = False
         while logged_in == False:
             try:
-                self.br.open(game_url, timeout=35)
-                self.br.select_form(nr=0)
-                self.br['login'] = self.name
-                self.br['password'] = self.password
-                self.br.submit()
-                if self.br.geturl() == game_url+"?o=6":
-                    char.logger.write(log() + "Wrong password")
-                    sys.exit()
-                elif self.br.geturl() == game_url: #server under maint?
+                response = self.br.open(loginform_url, data=urllib.urlencode({'login':self.name, 'password':self.password}), timeout=35)
+                if response.geturl() == game_url+"?o=6":
+                    self.logger.write(log() + "Wrong password\n")
+                    thread.exit()
+                elif response.geturl() == game_url: #server under maint?
+                    self.logger.write(log() + "Server maybe under maintainance\n")
                     time.sleep(60)
                 else:
                     logged_in = True
             except:
                 self.logger.write(log())
+                time.sleep(15)
                 traceback.print_exc(file = self.logger)
+
 
 
     def visit(self, url, mydata=None):
@@ -98,7 +89,7 @@ class Character():
         - `url`: The url to open
         - `mydata`: The post data
         Returns:
-        The browser after we visit that url
+        The response after we visit that url
         """
         if self.is_server_under_maint():
             self.login()
@@ -106,13 +97,13 @@ class Character():
         loaded = False
         while loaded == False:
             try:
-                self.br.open(url, data=mydata, timeout=35)
+                response = self.br.open(url, data=mydata, timeout=35)
                 loaded = True
             except:
-                self.logger.write(log())
+                self.logger.write(log() + " -ERROR OPENING URL: " + url + "\n")
                 traceback.print_exc(file = self.logger)
-                time.sleep(5)
-        return self.br
+                time.sleep(15)
+        return response
 
 
 
@@ -125,7 +116,6 @@ class Character():
 
 
 
-
     def is_working(self):
         """
         Arguments:
@@ -133,6 +123,7 @@ class Character():
         """
         self.update_characteristics()
         return self.activity != 'none'
+
 
 
     def get_current_time(self):
@@ -157,6 +148,8 @@ class Character():
             return False
 
 
+
+
     def sleep_till_next_event(self):
         """
         Makes the character sleep till next event i.e. job complete
@@ -173,7 +166,9 @@ class Character():
         self.refresh()
 
 
-    def get_time_till_reset(self):
+
+
+    def get_seconds_till_reset(self):
         """
         Returns the number of seconds left
         till the next reset
@@ -185,17 +180,20 @@ class Character():
         return diff.seconds
 
 
+
+
     def update_characteristics(self):
         """
-        Updates the basic status info of the character
+        Updates the basic status info of the character. Also resurrects the character
+        if it is dead.
         - `health`: 0-dead, 1-dying, 2-bony, 3-skinny, 4-weak, 5-exhausted, 6-fit
         - `hunger`: How many hunger points you can eat
         - `activity`: The activity you are performing
         - `activity_remaining`: minutes remaining for the activity. -1 if not applicable
         """
 
-        br = self.visit(town_url)
-        soup = BeautifulSoup(br.response().read())
+        response = self.visit(town_url)
+        soup = BeautifulSoup(response.read())
 
         temp2 = soup.find('div', {'class' : 'zone_caracteristiques'}).findAll('div', {'class' : 'caracteristique01 caracteristique03'})#for health and hunger information
         temp1 = soup.find('div', {'class' : 'caracteristique01 caracteristiqueActivite'}) #for activity information
@@ -218,28 +216,20 @@ class Character():
         elif self.activity == 'none':
             self.activity_remaining = 0
         else: #Traveling
-            self.activity_remaining = int(self.get_time_till_reset()/60)
+            self.activity_remaining = int(self.get_seconds_till_reset()/60)
 
 
 
     def update_inventory(self):
         """
         Builds an inventory which is in the form of an count array.
-        
-        Internals:
-        The game keeps the inventory info within a javascript so we must extract it first and then
-        give it to BeautifulSoup for parsing.
         """
         
-        self.logout()
-        self.login()
-        
-        self.inventory = [0] * 390
         s1 = "textePage[1]['Texte'] = '"
         s2 = "textePage[2] = new"
 
-        br = self.visit(my_url)
-        page = br.response().read()
+        response = self.visit(my_url)
+        page = response.read()
 
         start = page.find(s1)
         end = page.find(s2)
@@ -247,6 +237,7 @@ class Character():
         start+=len(s1)
         soup = BeautifulSoup(page[start:end])
 
+        self.inventory = [0] * 390
         self.money = soup.find('div', {'id' : 'Item10'}).text
         m = re.search('\d+.\d+', self.money)
         self.money = float(re.sub(",",".",m.group(0)))
@@ -266,9 +257,8 @@ class Character():
         of the character.
         """
 
-
-        br = self.visit(my_url)
-        page = br.response().read()
+        response = self.visit(my_url)
+        page = response.read()
         soup = BeautifulSoup(page)
         rows = soup.find_all('tr', {'class' : 'tr_perso'})
 
@@ -292,7 +282,7 @@ class Character():
         self.update_characteristics()
         self.update_inventory()
         self.update_stats()
-
+        self.home.update_inventory()
 
 
     def use(self, item, times=1):
@@ -318,7 +308,7 @@ class Character():
         while times > 0:
             #print url #for debug
             self.logger.write(log() + " Using item: " + item + "\n")
-            self.br.open(url)
+            self.br.open(url, timeout=35)
             times-=1
         self.refresh()
 

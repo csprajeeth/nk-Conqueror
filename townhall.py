@@ -1,5 +1,5 @@
 import re
-import mechanize
+
 from gameurls import townhall_url
 from bs4 import BeautifulSoup
 
@@ -24,16 +24,18 @@ class Job():
 
 
 
-def get_jobs(br):
+def get_jobs(char):
     """
     Returns a list of jobs that the player is eligible to apply for
     at the town hall.
     Arguments:
     - `br`:
     """
-    br.open(townhall_url)
-    page = br.response().read()
+
+    response = char.visit(townhall_url)
+    page = response.read()
     jobs = []
+
     for m in re.finditer("textePage\[2\]\[\d+\]\[\'Texte\'\] = \'", page, re.IGNORECASE):
         start = m.end(0)
         end = page.find("';", start)

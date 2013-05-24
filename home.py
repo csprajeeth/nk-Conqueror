@@ -3,7 +3,6 @@ from gameurls import *
 from gamedata import item_map
 
 import urllib
-import mechanize
 import re
 
 class Home():
@@ -33,15 +32,14 @@ class Home():
         give it to BeautifulSoup for parsing.
         """
 
-        self.char.logout()
-        self.char.login()
+
         self.inventory = [0] * 390
 
         s1 = "textePage[1]['Texte'] = '"
         s2 = "textePage[2] = new"
 
-        br = self.char.visit(myhome_url)
-        page = br.response().read()
+        response = self.char.visit(myhome_url)
+        page = response.read()
 
         start = page.find(s1)
         end = page.find(s2)

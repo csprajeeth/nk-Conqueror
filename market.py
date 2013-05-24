@@ -2,8 +2,8 @@ from gameurls import *
 from bs4 import BeautifulSoup
 from gamedata import item_map
 from init import log
+
 import re
-import mechanize
 import urllib
 import time
 
@@ -20,8 +20,8 @@ def get_market_sales(char, item=None):
     information is returned
     """
 
-    br = char.visit(market_url)
-    page = br.response().read()    
+    response = char.visit(market_url)
+    page = response.read()    
     m = re.search("textePage\[0\]\[\'Texte\'\] = '",  page, re.IGNORECASE)
     start = m.end(0)
     end = page.find("';",start)
@@ -39,7 +39,7 @@ def get_market_sales(char, item=None):
     if item == None:
         return market_data 
     if item not in item_map:
-        raise ValueError("Item is not in database")
+        raise ValueError("Item is not in database" + str(item))
     item_code = item_map[item]
 
     for i in range(len(market_data)):
@@ -94,7 +94,7 @@ def apply_price_filter(sales, price):
 
     elif type(price) is int or type(price) is float:
         if int(round(price*100,1))%10 not in [0,5]:
-            raise ValueError("Invalid price. Change must be a multiple of 5")
+            raise ValueError("Invalid price. Change must be a multiple of 5" + str(price))
         tprice = int(round(price*100,1))
         for sale in sales:
             if sale[1] == tprice: 
@@ -139,7 +139,7 @@ def buy(char, item, price = None, quantity=1, block=True):
     """
 
     if item not in item_map:
-        raise ValueError("Item is not in the db")
+        raise ValueError("Item is not in the db" + str(item))
 
     item_code = item_map[item]
 

@@ -1,3 +1,5 @@
+import re
+
 from gameurls import *
 from collections import deque
 from gamedata import node_map
@@ -24,20 +26,12 @@ def load_world_map():
     return adjlist
 
 
-def get_node_number(char, adjlist):
+def get_node_number(char, adjlist, neighbours):
     """
     Returns the node number the character is currently at
     Arguments:
     - `char`:
     """
-
-    br = char.get_browser()
-    page = br.open(outskirts_url).read()
-
-    neighbours = []
-    for m in re.finditer("(textePage\[0\]\[)(\d+)(\]\[\'Texte\'\] = \')", page, re.IGNORECASE):
-        neighbours.append(int(m.group(2)))
-            
     for i in range(0, len(adjlist)):
         if i not in neighbours and len(adjlist[i]): #exclude the neighbours and disconnected nodes
             assertion = True #asserting that this is the characte's node
@@ -47,7 +41,7 @@ def get_node_number(char, adjlist):
             if assertion: 
                 return i
 
-    print "Unable to find the character's node: " +  char.name
+    char.logger.write(log()+ "Unable to find the character's node: ")
     return None
 
 
@@ -80,13 +74,27 @@ def get_next_hop(char, destination):
     """
     Returns the next node in the shortest path the character must travel inorder
     to reach 'destination'. 
+    
+    Note: It takes care of whether or not the character is a noble (3 node coverage)
+    or a normal traveller (2 node coverage)
+    Arguments:
+    -`destination`: can be a node number or the name of a town
     """
-    if destination not in node_map:
-        raise ValueError("Destination not in the db. - " + destination)
 
-    destination = node_map[destination]
-    adjlist = load_world_map()
-    src = get_node_number(char, adjlist)
+    if type(destination) is str:
+        if destination not in node_map:
+            raise ValueError("Destination not in the db. - " + str(destination))
+        destination = node_map[destination]
+    if type(destination) is not str and type(destination) is not int:
+        raise TypeError("Invalid type supplied as destination - " + str(destination))
+
+    page = char.visit(outskirts_url).read()
+    neighbours = []
+    for m in re.finditer("(textePage\[0\]\[)(\d+)(\]\[\'Texte\'\] = \')", page, re.IGNORECASE):
+        neighbours.append(int(m.group(2)))
+
+    adjlist = load_world_map()    
+    src = get_node_number(char, adjlist, neighbours)
 
     if destination == src:
         return None
@@ -94,15 +102,26 @@ def get_next_hop(char, destination):
     depth = [-1] * len(adjlist)
     parents = breadth_first_visit(adjlist, depth, src)
     if depth[destination] == -1:
-        print "Destination not reachable -- " + destination
+        char.logger.write(log() + " Destination not reachable -- " + str(destination))
         return None
 
     node = destination
     path = [node]
-    while node != src: #parent of the source node is -1
+    while node != src: 
         path.append(parents[node])
         node = parents[node]
 
     path = path[::-1]
     char.logger.write(log() + str(path) + "\n")
-    return path[2] if len(path) >= 3 else path[1]
+
+    #return the farthest neighbour -- takes care of noble travelling too
+    dst = -1
+    for node in neighbours:
+        try:
+            index = path.index(node)
+            if index > dst:
+                dst = index
+        except:
+            pass
+    return path[dst]
+
