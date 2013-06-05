@@ -1,21 +1,64 @@
+from collections import namedtuple
+
 healthTable = {
-"You are fit.":6,
-"You are exhausted.":5,
-"You are weak.":4,
-"You are skinny.":3,
-"You are bony.":2,
-"You are dying.":1,
-"You are DEAD":0 
+"you are fit":6,
+"you are exhausted":5,
+"you are weak":4,
+"you are skinny":3,
+"you are bony":2,
+"you are dying":1,
+"you are dead":0 
 }
 
 hungerTable = {
-"You are not hungry.":0,
-"You're hungry":1,
-"You're veryhungry":2,
-"You're very hungry":2,
-"You're very\nhungry":2,
-"You're very very hungry":3 
+"you are not hungry.":0,
+"you\\'re hungry":1,
+"you\\'re veryhungry":2,
+"you\\'re very hungry":2,
+"you\\'re very\\nhungry":2,
+"you're very very hungry":3
 }
+
+scrape_strings = {
+"hunger":"hunger\s*:\s*",
+"health":"health\s*:\s*",
+"activity":"activity\s*:\s*",
+}
+
+stat_strings = {
+"str":"strength",
+"int":"intelligence",
+"charisma":"charisma",
+"rep":"reputation points"
+}
+
+activity_strings = {
+"mine":'you are working in the mine', 
+"imw":'you are working for the province',
+"travel":'traveling',
+"none":'none',
+"lake":'fishing',
+"orchard":'picking fruit',
+"forest":'cut wood',
+}
+
+resource_strings = {
+"lake":"lake",
+"orchard":"orchard",
+"forest":"forest",
+}
+
+item_strings = {
+"boat":"canoe",
+"small ladder":"small ladder",
+"large ladder":"large ladder",
+"axe":"obsidian axe",
+}
+
+GameStrings = namedtuple('GameStrings', ['scrape', 'stats', 'activity', 'resource', 'items'])
+game_strings = GameStrings(scrape = scrape_strings, stats = stat_strings, activity = activity_strings,
+                           resource = resource_strings, items = item_strings)
+
 
 item_map = {
 "money":0,
@@ -100,10 +143,26 @@ item_map = {
 "obsidian shard":80,
 "obsidian shards":80,
 
-#fuck the clothing
+"headdress":84,
+"sarapes":85,
+"sarape":85,
+"huipils":86,
+"huipil":86,
+
+"loincloths":88,
+"loincloth":88,
+
+"men's leggings":91,
+"men's legging":91,
+"woman's leggings":92,
+"woman's legging":92,
+"sandals":93,
+"sandal":93,
 
 "sword":105,
 "swords":105,
+"club":105,
+"clubs":105,
 "shield":106,
 "shields":106,
 
@@ -112,6 +171,7 @@ item_map = {
 
 "fleur pavot blanc":341,
 "fleurs pavot blanc":341,
+
 "poplar bud":352,
 "poplar buds":352,
 "manioc root":353,
@@ -122,35 +182,24 @@ item_map = {
 "sarsaparilla roots":355,
 "garlic bulb":356,
 "garlic bulbs":356,
-
-"feuilles d'estragon":357,
-"anise flowers":357,
-
-"feuilles de cacaoyier":358,
-"rosemary sprigs":358,
-"sprig of rosemary":358,
-"sprigs of rosemary":358,
-
-
-"piece of white willow bark":360,
-"pieces of white willow bark":360,
-
-"feuilles de sauge":361,
-"angelica sprig":361,
-"angelica sprigs":361,
-
-"racines de tomate des sables":362,
-
-"mint leaf":363,
-"mint leaves":363,
-
-"feuille d'acanthe sauvage":364,
-"chamomile flower":364,
-"chamomile flowers":364,
-
-"baies de sureau noir":365,
-"black elder berry":365,
-"black elder berries":365
+"tarragon leaves":357,
+"tarragon leaf ":357,
+"cacao leaves":358,
+"cacao leaf":358,
+"tabasco seeds":359,
+"tabasco seed":359,
+"pine resins":360,
+"pine resin":360,
+"sage leaves":361,
+"sage leaf":361,
+"tomato roots":362,
+"tomato root":362,
+"amaryllis flowers":363,
+"amaryllis flower":363,
+"leaves of wild acanthus":364,
+"leaf of wild acanthus":364,
+"black elderberry berry":365,
+"black elderberry berries":365
 }
 
 hp_info = {   
@@ -194,3 +243,5 @@ r_food_map = {
 node_map = {
 "itzohcan":17
 }
+
+__all__ = ["healthTable", "hungerTable", "game_strings", "item_map", "hp_info", "r_food_map", "node_map"]

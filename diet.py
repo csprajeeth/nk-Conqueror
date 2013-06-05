@@ -236,7 +236,7 @@ class MinCostDiet():
         self.char.logger.write(log() + " Consumed " + str(consumed) + " hp worth food from inventory. Need to eat " + str(leftover) + " hp points more."+ "\n")
 
         while leftover > 0: # we must buy some food from the market
-            cost = [] 
+            costs = [] 
             weight = []
             quantity = []
             khana = []
@@ -254,7 +254,7 @@ class MinCostDiet():
                 for sale in sales_info:
 
                     khana.append(food_name)
-                    cost.append(sale[1])
+                    costs.append(sale[1])
                     weight.append(hp_info[food_name])
                     quantity.append(min(qty_to_buy, sale[2]))
                     qty_to_buy -= min(qty_to_buy, sale[2])
@@ -264,23 +264,22 @@ class MinCostDiet():
 
             self.char.logger.write("leftover: " + str(leftover) + "\n")
             for i in range(0, len(khana)):
-                self.char.logger.write(str(khana[i]) + " " + str(cost[i])  + " " + str(quantity[i]) + " " + str(weight[i])+"\n")
+                self.char.logger.write(str(khana[i]) + " " + str(costs[i])  + " " + str(quantity[i]) + " " + str(weight[i])+"\n")
 
             if len(khana) == 0: #when there is no food available to buy on the market (ex: when on the roads)
                 return leftover
 
-            buy_list, cost = self.make_optimal_buy_decision(khana, cost, weight, quantity, leftover)
-            self.char.logger.write(str(buy_list) + "\n" + "Cost: " + str(cost) + "\n")
+            buy_list, meal_cost = self.make_optimal_buy_decision(khana, costs, weight, quantity, leftover)
+            self.char.logger.write(str(buy_list) + "\n" + "Cost: " + str(meal_cost) + "\n")
             
             khana = list(set(buy_list))
             quantity = []
             prev_counts = []
-            cost = 0
             for var in khana:
                 quantity.append(buy_list.count(var))
             self.char.update_inventory()
-
-            no_money_flag = int(round(self.char.money*100,1)) < cost
+            
+            money = int(round(self.char.money*100,1))
 
             for i in range(0, len(khana)):
                 prev_counts.append(self.char.inventory[item_map[khana[i]]])
@@ -289,10 +288,11 @@ class MinCostDiet():
             market.snooze_till_market_reset(self.char)
             
             for i in range(0, len(khana)):
-                leftover -= (hp_info[khana[i]] *  self.char.inventory[item_map[khana[i]]] - prev_counts[i])
-                self.char.use(khana[i], self.char.inventory[item_map[khana[i]]] - prev_counts[i])
+                 leftover -= (hp_info[khana[i]] *  self.char.inventory[item_map[khana[i]]] - prev_counts[i])
+                 self.char.use(khana[i], self.char.inventory[item_map[khana[i]]] - prev_counts[i])
                 
-            if no_money_flag: # we don't have enough money to buy even the min cost meal, then break out
+            if money < meal_cost: # we don't have enough money to buy even the min cost meal, then break out
+                self.char.logger.write(log()+ " We don't have enough money to buy food! (money: " + str(money) + ") (cost: " + str(meal_cost) + ")\n")
                 break
 
         return leftover

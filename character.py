@@ -33,14 +33,17 @@ class Character():
         self.activity_remaining = None
 
         self.inventory = [0] * 390
-        
+        self.load = None
+        self.maxload = None
+
         self.level = None
         self.strength = None
         self.intelligence = None
         self.charisma = None
         self.reputation = None
         self.mood = None
-        
+        self.tools = {66:False, 67:False, 71:False, 73:False, 105:False, 106:False}
+
         self.login()
         self.home = Home(self)
         self.refresh()
@@ -126,7 +129,7 @@ class Character():
         - `self`:
         """
         self.update_characteristics()
-        return self.activity != 'none'
+        return self.activity != game_strings.activity['none']
 
 
 
@@ -196,28 +199,30 @@ class Character():
         - `activity_remaining`: minutes remaining for the activity. -1 if not applicable
         """
 
-        response = self.visit(town_url)
-        soup = BeautifulSoup(response.read())
+        page = self.visit(my_url).read()
+        s1 = "textePage[0]['Texte'] = '"
+        start = page.find(s1) + len(s1)
+        end = page.find("';", start)
+        soup = BeautifulSoup(page[start:end])
+        tags = soup.find_all('li')
 
-        temp2 = soup.find('div', {'class' : 'zone_caracteristiques'}).findAll('div', {'class' : 'caracteristique01 caracteristique03'})#for health and hunger information
-        temp1 = soup.find('div', {'class' : 'caracteristique01 caracteristiqueActivite'}) #for activity information
-
-        self.activity = temp1.find('div', {'class' : 'elementActivite'}).get_text().strip()
-        self.activity = re.sub('Activity:', '', self.activity).strip().lower()
-
-        self.health = healthTable[temp2[0].get_text().strip()]
-        self.hunger = hungerTable[temp2[1].get_text().strip()]
+        self.hunger = hungerTable[re.sub(game_strings.scrape['hunger'], '', tags[1].text.lower().strip())]
+        self.health = healthTable[re.sub(game_strings.scrape['health'], '', tags[2].text.lower().strip())]
 
         if self.health == 0: #you are dead
             self.visit(game_url+"Action.php?action=36") #Resurrect 
             return self.update_characteristics() #do everything again
 
-        if self.activity != 'none' and self.activity != 'traveling':
-            self.activity_remaining = temp1.find('div', {'class' : 'tempsRestant'}).get_text().strip()
+        soup = BeautifulSoup(page)
+        self.activity = soup.find('div', {'class':'elementActivite'}).text.lower().strip()
+        self.activity = re.sub(game_strings.scrape['activity'], '', self.activity)
+
+        if self.activity != game_strings.activity['none'] and self.activity != game_strings.activity['travel']:
+            self.activity_remaining = soup.find('div', {'class' : 'tempsRestant'}).text.strip()
             m = re.search('\d+:\d+', self.activity_remaining)
             arr =  m.group(0).split(':')
             self.activity_remaining = int(arr[0])*60 + int(arr[1])
-        elif self.activity == 'none':
+        elif self.activity == game_strings.activity['none']:
             self.activity_remaining = 0
         else: #Traveling
             self.activity_remaining = int(self.get_seconds_till_reset()/60)
@@ -232,14 +237,17 @@ class Character():
         s1 = "textePage[1]['Texte'] = '"
         s2 = "textePage[2] = new"
 
-        response = self.visit(my_url)
-        page = response.read()
+        page = self.visit(my_url).read()
 
         start = page.find(s1)
         end = page.find(s2)
         end = page.rfind("'",start,end)
         start+=len(s1)
         soup = BeautifulSoup(page[start:end])
+
+        m = re.search("(\d+)(\s*/\s*)(\d+)", soup.text)
+        self.load = int(m.group(1))
+        self.maxload = int(m.group(3))
 
         self.inventory = [0] * 390
         self.money = soup.find('div', {'id' : 'Item10'}).text
@@ -253,11 +261,11 @@ class Character():
             item_code = item_map[item_description[i+1].text.lower()]
             self.inventory[item_code] = int(no_of_items[i].text)
             
-
+        
 
     def update_stats(self):
         """
-        Updates the str, int, charisma, rep and mood
+        Updates the level, str, int, charisma, rep and mood
         of the character.
         """
 
@@ -267,7 +275,7 @@ class Character():
         rows = soup.find_all('tr', {'class' : 'tr_perso'})
 
         arr = rows[0].td.text.split(" ")
-        self.level = int(arr[1])
+        self.level = 99 if 'Vagrant' in arr[1] else int(arr[1]) 
 
         self.mood = rows[1].td.text
         stats = dict()
@@ -275,17 +283,72 @@ class Character():
             tds = rows[i].find_all('td')
             stats[tds[1].text.lower()] = int(tds[2].text)
             
-        self.strength = stats["strength"]
-        self.intelligence = stats["intelligence"]
-        self.charisma = stats["charisma"]
-        self.reputation = stats["reputation points"]
+        self.strength = stats[game_strings.stats['str']]
+        self.intelligence = stats[game_strings.stats['int']]
+        self.charisma = stats[game_strings.stats['charisma']]
+        self.reputation = stats[game_strings.stats['rep']]
 
-    
+
+        
+    def update_tools_and_wardrobe(self):
+        """
+        Updates the wardrobe and tools that the character
+        uses.
+        Arguments:
+        - `self`:
+        """
+        for key in self.tools.keys():
+            self.tools[key] = False
+
+        page = self.visit(my_url).read()
+        s1 = "textePage[0]['Texte'] = '"
+        start = page.find(s1) + len(s1)
+        end = page.find("';", start)
+        text = page[start:end]
+        
+        if "action=55&type=Barque" in text: #canoe
+            self.tools[71] = True        
+        if "action=55&type=Echelle" in text: #ladder
+            if "small ladder" in text:
+                self.tools[66] = True
+            else:
+                self.tools[67] = True
+        if "action=154&r=1" in text: #axe
+            self.tools[73] = True
+        if "action=154&r=1&t=1" in text: #shield
+            self.tools[106] = True
+
+
 
     def refresh(self):
         self.update_characteristics()
         self.update_inventory()
         self.update_stats()
+        self.update_tools_and_wardrobe()
+
+
+
+    def equip(self, item):
+        """
+        Equips a weapon. These items can be unquipped.
+        Arguments:
+        - `self`: 
+        - `item`: The weapon to be equipped
+        """
+        
+        name = item
+        self.update_inventory()
+        if type(item) is str:
+            if item not in item_map:
+                char.logger.write(log() + " Item not in db - " + str(item) + "\n")
+                return None
+            item = item_map[item]
+        if self.inventory[item]:
+            self.visit(game_url + "Action.php?action=154&o=" + str(item))
+            self.logger.write(log() + " Equipped: " + str(name) + "\n")
+        else:
+            self.logger.write(log() + " Unable to equip item: " + str(name) + " - not in inventory\n")
+        self.update_tools_and_wardrobe()
 
 
 
@@ -297,28 +360,31 @@ class Character():
         - `item`: Name of the item to use
         - `times`: number of times to use. -1 to use all
         """
-
+        name = item
         self.update_inventory()
-        
-        if item not in item_map:
-            raise ValueError("Item not in db - " + str(item))
-        if self.inventory[item_map[item]] < times:
-            raise ValueError("Item not available in sufficient quantity. item: " + str(item) + " quantity: " + str(quantity))
+        if type(item) is str:
+            if item not in item_map:
+                char.logger.write(log() + " Item not in db - " + str(item) + "\n")
+                return None
+            item = item_map[item]
 
+        if self.inventory[item] < times:
+            char.logger.write(log() + " Item not available in sufficient quantity. item: " + str(item) + " quantity: " + str(quantity) + "\n")
+            return None
+            
         if times == -1:
-            times = self.inventory[item_map[item]]
+            times = self.inventory[item]
 
 
-        url = game_url + "Action.php?action=6&type=" + str(item_map[item]) + "&IDParametre=0"
+        url = game_url + "Action.php?action=6&type=" + str(item) + "&IDParametre=0"
         while times > 0:
             #print url #for debug
-            self.logger.write(log() + " Using item: " + item + "\n")
+            self.logger.write(log() + " Using item: " + str(name) + "\n")
             self.br.open(url, timeout=35)
             times-=1
         self.refresh()
 
         
-
 
 
     def sell(self, item, price, quantity=1):
@@ -361,23 +427,20 @@ class Character():
         - `quantity`:
         """
 
-        if item not in item_map: 
-            raise ValueError("Item not in db - " + str(item))
-
-
-        item_code = item_map[item]
-        quantity = int(quantity)
+        if type(item) is str:
+            if item not in item_map: 
+                raise ValueError("Item not in db - " + str(item))
+            item = item_map[item]
 
         self.update_inventory()
-        if  (item_code and self.inventory[item_code] < quantity) or (~item_code and self.money < quantity):
+        if  (item and self.inventory[item] < quantity) or (~item and self.money < quantity):
             raise ValueError("Item not available in sufficient quantity. item: " + str(item) + " quantity: " + str(quantity))
 
         if quantity == -1:
-            quantity = self.inventory[item_code] if item_code else self.money
+            quantity = self.inventory[item] if item else self.money
 
-
-        transfer_url = game_url + "Action.php?action=69&type=" + str(item_code)+ "&IDParametre=0"
-        if item_code == 0: #if its money we are transfering
+        transfer_url = game_url + "Action.php?action=69&type=" + str(item)+ "&IDParametre=0"
+        if item == 0: #if its money we are transfering
             self.money -= quantity
             post =  urllib.urlencode({'destination':'transfererPropriete', 'submit':'OK', 'quantite':'100'})
             while quantity > 100:
@@ -386,5 +449,27 @@ class Character():
 
         self.br.open(transfer_url, urllib.urlencode({'destination':'transfererPropriete', 'submit':'OK', 
                                                     'quantite':str(quantity) }))
-        if item_code:
-            self.inventory[item_code] -= quantity
+        self.update_inventory()
+        self.home.update_inventory()
+
+
+
+    def level_up_1(self, field=None):
+        """
+        Levels up the character to level 1
+        Arguments:
+        - `self`:
+        - `field`: The field you want. None if you want to be a vagrant
+        """
+
+        soup = BeautifulSoup(self.visit(town_url).read())
+        level_up_url  = town_url if "ville" in soup.title.text.lower() else province_url
+        page = char.visit(level_up_url).read()
+        if type(field) is str:
+            field = field_map[field]
+        if "?action=16" in page:
+            if field == None:
+                char.visit(game_url+"Action.php?action=16", urllib.urlencode({'niveau':'1', 'passage':'become a vagrant', 'usage':'99'}))
+            else:
+                char.visit(game_url+"Action.php?action=16", urllib.urlencode({'niveau':'1', 'passage':'Level up 1', 'usage':str(field)}))
+

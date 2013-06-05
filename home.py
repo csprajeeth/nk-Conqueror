@@ -65,24 +65,26 @@ class Home():
         to the character
         
         Arguments:
-        - `item`:
+        - `item`: The item code or the name of the item
         - `quantity`:
         """
 
         self.update_inventory()
-        if item not in item_map: 
-            raise ValueError("Item not in db")
-        item_code = item_map[item]
 
-        if  (item_code and self.inventory[item_code] < quantity) or (~item_code and self.money < quantity):
+        if type(item) is str:
+            if item not in item_map: 
+                raise ValueError("Item not in db")
+            item = item_map[item]
+
+        if (item and self.inventory[item] < quantity) or (~item and self.money < quantity):
             raise ValueError("Item not available in sufficient quantity")
 
         if quantity == -1:
-            quantity = self.inventory[item_code] if item_code else self.money
+            quantity = self.inventory[item] if item else self.money
 
 
-        transfer_url = game_url + "Action.php?action=69&c=1&type=" + str(item_code)+ "&IDParametre=0"
-        if item_code == 0: #if its money we are transfering
+        transfer_url = game_url + "Action.php?action=69&c=1&type=" + str(item)+ "&IDParametre=0"
+        if item == 0: #if its money we are transfering
             self.money -= quantity
             post =  urllib.urlencode({'destination':'transfererPropriete', 'submit':'OK', 'quantite':'100'})
             while quantity > 100:
@@ -91,5 +93,5 @@ class Home():
 
         self.char.visit(transfer_url, urllib.urlencode({'destination':'transfererPropriete', 'submit':'OK', 
                                                     'quantite':str(quantity) }))
-        if item_code:
-            self.inventory[item_code] -= quantity
+        self.update_inventory()
+        self.char.update_inventory()

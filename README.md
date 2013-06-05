@@ -5,4 +5,4 @@ nk-Conqueror
 
 Still in development and testing.
 
-https://github.com/csprajeeth/nk-Conqueror/wiki/Development
+https://github.com/csprajeeth/nk-Conqueror/wiki/Welcome!

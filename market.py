@@ -56,20 +56,26 @@ def get_market_sales(char, item=None):
 
 def snooze_till_market_reset(char):
     """
-    Puts the caller to sleep till the market resets (all pending transactions are done)
-    ::
-    The markets reset at every 10th minute
-    Arguments:
-    - `char`:
+    Puts the caller to sleep till the market resets (all pending
+    transactions are done). The markets reset at every 10th minute
+    Arguments: - `char`:
     """
-    current_time = char.get_current_time()
-    minutes_to_sleep = 10 - (current_time[4]%10) +  0.5 #+0.5 to incorporate some delay for market reset
-    char.logger.write(log() + "sleeping for " + str(minutes_to_sleep * 60) + " sec" + '\n')
-    char.logout()
-    time.sleep(minutes_to_sleep * 60)
-    char.logger.write(log() + "woke up...refreshing" + '\n')
-    char.login()
-    char.refresh()
+
+    page = char.visit(market_url).read()
+    s1 = "textePage[1]['Texte'] = '"
+    s2 = "Sale"
+    start = page.find(s1) + len(s1)
+    end = page.find(s2, start)
+    text = page[start:end].lower()
+    if "each" in text:
+        current_time = char.get_current_time()
+        minutes_to_sleep = 10 - (current_time[4]%10) +  0.25 #+0.3 to incorporate some delay for market reset
+        char.logger.write(log() + "sleeping for " + str(minutes_to_sleep * 60) + " sec" + '\n')
+        char.logout()
+        time.sleep(minutes_to_sleep * 60)
+        char.logger.write(log() + "woke up...refreshing" + '\n')
+        char.login()
+        char.refresh()
 
 
 def apply_price_filter(sales, price):
@@ -142,7 +148,6 @@ def buy(char, item, price = None, quantity=1, block=True):
         raise ValueError("Item is not in the db - " + str(item))
 
     item_code = item_map[item]
-
     submit_url = game_url + "Action.php?action=11"
     basket_url = game_url + "Action.php?action=29"
     poster = char.get_browser()
