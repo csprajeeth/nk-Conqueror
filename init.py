@@ -3,13 +3,13 @@ import socks
 
 
 from datetime import datetime
-from pytz import timezone
+#from pytz import timezone
 
 
 
 def log():
     fmt = "%a %b %d %H:%M:%S %Y %Z"
-    now_time = datetime.now(timezone('Asia/Kolkata'))
+    now_time = datetime.now()#timezone('Asia/Kolkata'))
     return now_time.strftime(fmt) + ": "
 
 
