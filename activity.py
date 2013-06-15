@@ -82,13 +82,22 @@ def work_in_mine(char, duration=1, mine=None):
     mine_list = [game_url+form['action'] for form in forms if "t=mine" in form['action']]
     mine_list = set(mine_list)
 
-    if mine == None:
-        for url in mine_list:
-            char.visit(url, urllib.urlencode({'duree':str(duration)}))
-    else:
-        for url in mine_list:
-            if "n="+str(mine) in url:
-                char.visit(url, urllib.urlencode({'duree':str(duration)}))
+    if len(mine_list) == 0:
+        char.logger.write(log() + " There are no mines!\n")
+        return False
+    else :
+        if mine == None:
+            for url in mine_list:
+                res = char.visit(url, urllib.urlencode({'duree':str(duration)})).read()
+                if "overcrowded" in res.lower():
+                    m = re.search("(n=)(\d+)",url,re.IGNORECASE)
+                    char.logger.write(log() + " Mine " + m.group(2) + " is full\n")
+        else:
+            for url in mine_list:
+                if "n="+str(mine) in url:
+                    res = char.visit(url, urllib.urlencode({'duree':str(duration)})).read()
+                    if "overcrowded" in res.lower():
+                        char.logger.write(log() + " Mine " + str(mine) + " is full\n")
                 break
 
 
@@ -164,6 +173,11 @@ def look_for_rare_materials(char):
 
     if char.is_working():
         return False
+    page = char.visit(outskirts_url).read()
+    m = re.search("Action.php?action=275", page, re.IGNORECASE)
+    if m == None:
+        char.logger.write(log() + " Searching for rare materials is not available on this node\n")
+        return False
     char.visit(game_url+"Action.php?action=275")
     result = char.is_working()
     char.logger.write(log() + " Look for rare materials: " + str(result) + " (" + str(char.activity) + ")" + "\n")
@@ -216,6 +230,7 @@ def retreat(char):
     return True
     
 
+
 def apply_for_militia(char):
     """
     Applies for militia job
@@ -224,7 +239,16 @@ def apply_for_militia(char):
     """
     if char.level < 1 or char.is_working():
         return False
+    page = char.visit(townhall_url).read()
+    m = re.search("Action.php?action=43", page, re.IGNORECASE)
+    if m == None:
+        char.logger.write(log() + " Militia job is not available\n")
+        return False
+
     char.visit(game_url+"Action.php?action=43")
+    result = char.is_working()
+    char.logger.write(log() + " Militia Application: " + str(result) + " (" + str(char.activity) + ")\n")
+    return result
 
 
 
@@ -244,11 +268,12 @@ def harvester(char, rsc):
         return False
 
     limit_Y = resource.get_max_Y_coordinate(rsc)
-    max_yield=0
+    max_yield = 0
     chances = resource.get_max_moves(char, rsc)
     br = char.get_browser()
     x = 0
     y = resource.set_Y_coordinate(char, rsc)
+    
     max_X = x
     max_Y = y
    
@@ -285,7 +310,7 @@ def harvester(char, rsc):
 
 
 
-def harvest_resource(char, autousetool=False, autobuytool=False, price=None):
+def harvest_resource(char, autousetool=True, autobuytool=False, price=None):
     """
     Harvests the clan resource (Lake/Orchard/Forest)
     Arguments:

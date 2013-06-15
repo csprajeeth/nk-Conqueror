@@ -1,5 +1,8 @@
 from collections import namedtuple
 
+server_maintainance_start = "8:59:00"
+server_maintainance_end = "9:10:00"
+
 healthTable = {
 "you are fit":6,
 "you are exhausted":5,
@@ -7,7 +10,7 @@ healthTable = {
 "you are skinny":3,
 "you are bony":2,
 "you are dying":1,
-"you are dead":0 
+"you are dead":0
 }
 
 hungerTable = {
@@ -21,7 +24,7 @@ hungerTable = {
 
 scrape_strings = {
 "hunger":"hunger\s*:\s*",
-"health":"health\s*:\s*",
+"health":"(health|fitness)\s*:\s*",
 "activity":"activity\s*:\s*",
 }
 
@@ -40,6 +43,7 @@ activity_strings = {
 "lake":'fishing',
 "orchard":'picking fruit',
 "forest":'cut wood',
+"search":"Search for valuable resources",
 }
 
 resource_strings = {
@@ -129,6 +133,9 @@ item_map = {
 "axe":73,
 "obsidian axe":73,
 "obsidian axes":73,
+
+"blunted obsidian axes":83,
+"blunted obsidian axe":83,
 
 "obsidian ore":76,
 "kilo of obsidian ore":76,
@@ -244,4 +251,21 @@ node_map = {
 "itzohcan":17
 }
 
-__all__ = ["healthTable", "hungerTable", "game_strings", "item_map", "hp_info", "r_food_map", "node_map"]
+
+field_map = {
+"maize":1,
+"bean":2,
+"beans":2,
+"vegetables":6,
+"vegetable":6
+}
+
+
+r_field_map = {
+1:"maize",
+2:"beans",
+6:"vegetables"
+}
+
+__all__ = ["server_maintainance_start", "server_maintainance_end", "healthTable", "hungerTable", 
+           "game_strings", "item_map", "hp_info", "r_food_map", "node_map", "field_map", "r_field_map"]

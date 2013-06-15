@@ -18,6 +18,8 @@ def get_market_sales(char, item=None):
     - `char`:
     - `item`: The item whose information is desired. If None then the whole market
     information is returned
+
+    Returns: The market information.
     """
 
     response = char.visit(market_url)
@@ -49,7 +51,7 @@ def get_market_sales(char, item=None):
                 i+=1
             end = i
             return market_data[start:end]
-    return None
+    return []
 
 
 
@@ -69,16 +71,18 @@ def snooze_till_market_reset(char):
     text = page[start:end].lower()
     if "each" in text:
         current_time = char.get_current_time()
-        minutes_to_sleep = 10 - (current_time[4]%10) +  0.25 #+0.3 to incorporate some delay for market reset
-        char.logger.write(log() + "sleeping for " + str(minutes_to_sleep * 60) + " sec" + '\n')
+        minutes_to_sleep = 10 - (current_time[4]%10) +  0.25 #to incorporate some delay for market reset
+        char.logger.write(log() + " Waiting for items purchased from the market (" + str(minutes_to_sleep * 60) + " seconds)" + '\n')
         char.logout()
         time.sleep(minutes_to_sleep * 60)
-        char.logger.write(log() + "woke up...refreshing" + '\n')
+        char.logger.write(log() + " Market transanctions done. Continuing.." + '\n')
         char.login()
         char.refresh()
 
 
-def apply_price_filter(sales, price):
+
+
+def apply_price_filter(sales, price=None):
     """Returns a list of items from the sales that match the price criteria
 
     Arguments:
@@ -86,8 +90,6 @@ def apply_price_filter(sales, price):
     - `price`:
     """
     buy_window = []
-    if sales == None:
-        return []
 
     if type(price) is tuple or type(price) is list:
         if len(price) != 2:
@@ -130,18 +132,13 @@ def buy(char, item, price = None, quantity=1, block=True):
     bought from the market in that range if its available
     -- Specify nothing in which case the item is bought for the lowest price available
     on the market
-    - `quantity`:
+    - `quantity`: Set to -1 to buy the all quantity on the market
     - `block`: Set to False if you do not want this function to block
 
     Returns: 
     - The number of items purchased. When used in non-blocking mode the return
     value is meaningless (should be ignored)
 
-    --NOTE OF WARNING--
-    THIS FUNCTION STRICTLY SPEAKING SENDS ILLEGAL DATA TO THE GAME WHICH DOESN'T 
-    HAPPEN WHEN THE GAME IS PLAYED IN THE BROWSER. SPECIFIALLY THE QUANTITY VARIABLE
-    IN THE POST DATA IS RESTRICTED TO A VALUE OF 10 BY THE BROWSER, BUT THIS FUNCTION
-    DOESN'T CARE ABOUT THOSE RULES.  #bot_detection
     """
 
     if item not in item_map:
@@ -152,10 +149,9 @@ def buy(char, item, price = None, quantity=1, block=True):
     basket_url = game_url + "Action.php?action=29"
     poster = char.get_browser()
 
-
     char.update_inventory()
     prev_count = char.inventory[item_code]
-    char.logger.write(log() + " prev_count: " + str(prev_count) + '\n')
+
     bought = 0
     got_money = True
     block_test = True
@@ -166,57 +162,72 @@ def buy(char, item, price = None, quantity=1, block=True):
         buy_window = apply_price_filter(sales,price)
         for sales in buy_window:
             quantity += sales[2]
-        char.logger.write(log() + " Quantity: " +  str(quantity) + '\n')
+        if len(buy_window) == 0:
+            char.logger.write(log() + " Item not available in price range\n" +
+                              "Bought " + str(bought) + " " + str(item) + "\n")
+
+
+    char.logger.write(log() + " Buying item: " + str(item) + " from the market\n" )
+    char.logger.write(log() + " Quantity: " +  str(quantity) + '\n')
+    #char.logger.write(log() + " prev_count: " + str(prev_count) + '\n') #debug. should be removed
 
 
     while bought != quantity and got_money and block_test:
         to_buy = quantity - bought
         sales = get_market_sales(char, item)
-        if sales == None:
+        if len(sales) == 0:
+            char.logger.write(log() + " Item not available on the market\n" + 
+                              "Bought " + str(bought) + " " + str(item) + "\n")
             return  bought
 
         buy_window = apply_price_filter(sales, price)
         if len(buy_window) == 0:
+            char.logger.write(log() + " Item not available in price range\n" +
+                              "Bought " + str(bought) + " " + str(item) + "\n")
             return bought
 
         char.update_inventory()
         money = int(round(char.money * 100,1))
     
-        char.visit(market_url)
-        applied = 0 #the number of items in our basket
+        #char.visit(market_url)
+        ordered = 0 #the number of items in our basket
 
         for sales in buy_window:
             prix = sales[1]
             quantite = min(to_buy, sales[2])
-            char.logger.write(log() + " " + str(prix) + " " + str(quantite) + " " + str(money) + '\n')
+            char.logger.write(log() + " Price:" + str(prix) + " Quantity:" + str(quantite) + " Money:" + str(money) + '\n')
             if (prix*quantite) > money:
                 got_money = False
                 quantite = int(money/prix)
 
             money -= (prix * quantite)
             poster.open(basket_url, urllib.urlencode({'IDParametre':'0', 'prix':str(prix),
-                                                      'quantite':str(quantite), 'typeObjet':str(sales[0])
-                                                      }))
+                                                      'quantite':str(quantite), 'typeObjet':str(sales[0]) #bd
+                                                      })) 
             to_buy -= quantite
-            applied += quantite
+            ordered += quantite
             if to_buy == 0 or got_money == False:
                 break
         
         poster.open(submit_url, urllib.urlencode({}))
-        char.logger.write(log() + " Applied: " + str(applied) + '\n')
+        char.logger.write(log() + " Ordered: " + str(ordered) + '\n')
         if block:
             snooze_till_market_reset(char)
 
         char.update_inventory()
-        if applied <= (char.inventory[item_code] - prev_count - bought): 
-            got_money = True #for the case where we ran out of money and we did not get item from the market(someone else bought it) 
-            #so we must retry again with what amount we have left
+        recent_purchase = char.inventory[item_code] - prev_count - bought
+
+        if not got_money and ordered and ordered > recent_purchase: #for the case where we ran out of money and we did not get item from the market(someone else bought it) 
+            got_money = True                                        #so we must retry again with what amount we have left
+
         bought = char.inventory[item_code] - prev_count 
         char.logger.write(log() + " Bought: " + str(bought) + '\n')
         block_test = block
-        char.logger.write( str(bought!= quantity) + " " + str(got_money) + " " + str(block_test) + '\n')
+        #char.logger.write( str(bought!= quantity) + " " + str(got_money) + " " + str(block_test) + '\n')
 
+    char.logger.write(log() + " Bought " + str(bought) + " " + str(item) + "\n")
     return bought
+
 
 
 
@@ -232,8 +243,8 @@ def get_cost(char, item, quantity=1):
         return 0
 
     sales = get_market_sales(char,item)    
-    if sales == None:
-        return None
+    if len(sales) == 0:
+        return -1
 
     cost = 0
     for sale in sales:
@@ -243,5 +254,6 @@ def get_cost(char, item, quantity=1):
             break
 
     if quantity != 0: #if all items cannot be purchased
-        return None
+        return -1
+
     return cost

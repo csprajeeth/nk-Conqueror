@@ -50,9 +50,8 @@ def get_jobs(char):
                 job.stat_required = True
                 job.stat_value = int((m.group(0).split(" "))[2])
                 job.stat = text[m.end(0):text.find("Points")].lower()
-            m = re.search('Wages\s*: [0-9.,]+', text, re.IGNORECASE)
-            m = re.search("[0-9,.]+",m.group(0))
-            job.wage =  float(re.sub(",", ".", m.group(0)))
+            m = re.search('(Wages\s*:\s*)([0-9.,]+)', text, re.IGNORECASE)
+            job.wage =  float(re.sub(",", ".", m.group(2)))
             m = re.search('requires a worker to ', text, re.IGNORECASE)
             if m == None:
                 m = re.search('looking for a ', text, re.IGNORECASE)

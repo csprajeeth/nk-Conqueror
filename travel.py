@@ -19,7 +19,7 @@ def load_world_map():
         nodes-=1
     for i in range(1, len(lines)):
         arr = lines[i].strip().split(" ")
-        if len(arr):
+        if len(arr) == 2 and arr[0][0]!='#' and arr[1][0]!='#':
             adjlist[int(arr[0])].append(int(arr[1]))
             adjlist[int(arr[1])].append(int(arr[0]))
     file.close()

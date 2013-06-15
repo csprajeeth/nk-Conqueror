@@ -1,4 +1,5 @@
 import re
+import random
 
 from init import log
 from gameurls import *
@@ -72,7 +73,7 @@ def buy_tool(char, resource):
     - `resource`: The resource to harvest
     """
     bought = 0
-    if resource == "lake":
+    if resource == "lake" and char.strength > 6:
         bought = market.buy(char, "canoe")
     if resource == "orchard":
         if char.strength >= 20:
@@ -188,6 +189,7 @@ def update_X_coordinate(x, y, resource):
     - `x`: The current x coordinate of the character in thr resource
     - `resource`: The resouce being harvested
     """
+
     if resource == "lake":
         return (x+1)%20
     elif resource == "orchard":

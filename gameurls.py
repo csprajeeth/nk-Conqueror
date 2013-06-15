@@ -1,5 +1,8 @@
 game_url = 'http://www.nativekingdoms.com/'
 loginform_url = game_url+"ConnexionKC.php"
+loginfail_url = game_url+"?o=6"
+logout_url = game_url+"Deconnexion.php"
+
 base_url = game_url + 'EcranPrincipal.php'
 town_url = base_url + '?l=0'
 myhome_url = base_url + '?l=1'

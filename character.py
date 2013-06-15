@@ -1,13 +1,15 @@
 from gameurls import *
 from bs4 import BeautifulSoup
 from gamedata import *
-from datetime import datetime
 from home import Home
 from init import log
+
+import fields
 
 import urllib
 import re
 import time
+import datetime
 import traceback
 import sys
 import urllib2
@@ -22,7 +24,7 @@ class Character():
         """
         """
         self.br = br
-        self.name = name
+        self.name = name.capitalize()
         self.password = password
         self.logger = logger
 
@@ -46,6 +48,8 @@ class Character():
 
         self.login()
         self.home = Home(self)
+        self.field1 = fields.get_field_object(self, 1)
+        self.field2 = fields.get_field_object(self, 2)
         self.refresh()
 
 
@@ -61,18 +65,18 @@ class Character():
     def login(self):
 
         while self.is_server_under_maint():
-            time.sleep(60)
+            time.sleep(120)
 
         logged_in = False
         while logged_in == False:
             try:
                 response = self.br.open(loginform_url, data=urllib.urlencode({'login':self.name, 'password':self.password}), timeout=35)
-                if response.geturl() == game_url+"?o=6":
+                if response.geturl() == loginfail_url:
                     self.logger.write(log() + "Wrong password\n")
                     thread.exit()
                 elif response.geturl() == game_url: #server under maint?
-                    self.logger.write(log() + "Server maybe under maintainance\n")
-                    time.sleep(60)
+                    self.logger.write(log() + " Server maybe under maintainance\n")
+                    time.sleep(120)
                 else:
                     logged_in = True
 
@@ -106,10 +110,12 @@ class Character():
             try:
                 response = self.br.open(url, data=mydata, timeout=35)
                 loaded = True
-            except:
+            except :
                 self.logger.write(log() + " -ERROR OPENING URL: " + url + "\n")
                 traceback.print_exc(file = self.logger)
                 time.sleep(15)
+                if "Bad Request" in str(sys.exc_info()[1]): #we lost the session
+                    self.login()
         return response
 
 
@@ -119,7 +125,7 @@ class Character():
         Arguments:
         - `self`:
         """
-        self.visit(game_url+"Deconnexion.php")
+        self.visit(logout_url)
 
 
 
@@ -146,26 +152,38 @@ class Character():
 
     def is_server_under_maint(self):
         """
-        Server maintainance interval : 8:59:00 - 9:20:00
+        Returns True if server is under maintainance.
+        False otherwise
         """
-        t1 = self.get_current_time()
-        if (t1[3] == 8 and t1[4] == 59) or (t1[3] == 9 and t1[4] < 20):
-            return True
-        else:
-            return False
+        now = self.get_current_time()
+        now = datetime.time(int(now[3]), int(now[4]), int(now[5]))
+
+        arr = server_maintainance_start.split(":")
+        maintainance_start = datetime.time(int(arr[0]), int(arr[1]), int(arr[2]))
+
+        arr = server_maintainance_end.split(":")
+        maintainance_end = datetime.time(int(arr[0]), int(arr[1]), int(arr[2]))
+
+        return True if maintainance_start <= now <= maintainance_end else False
 
 
 
 
-    def sleep_till_next_event(self):
+    def sleep_till_next_event(self, hours=0, minutes=0, seconds=0):
         """
-        Makes the character sleep till next event i.e. job complete
+        Makes the character sleep till next specified periord.
+        By default the character sleeps for a period that is equal to the time
+        needed to finish his current activity.
         Arguments:
         - `self`:
+        - `hours`: The hours to sleep
+        - `minutes`: The minutes to sleep
+        - `seconds`: The seconds to sleep
         """
 
         self.logout()
-        sleep_time = (self.activity_remaining + 2) * 60
+        sleep_time = hours * 3600 + minutes * 60 + seconds
+        sleep_time = (self.activity_remaining + 2) * 60 if sleep_time <= 0 else sleep_time
         self.logger.write(log() + " sleeping for " + str(sleep_time) + " sec" + '\n')
         time.sleep(sleep_time)
         self.logger.write(log() + " woke up...refreshing" + '\n')
@@ -180,10 +198,10 @@ class Character():
         Returns the number of seconds left
         till the next reset
         """
-        s1 = "9:20:00" #reset time in GMT
+        s1 = "9:15:00" #reset time in GMT
         t1 = self.get_current_time()
         s2 = str(t1[3]) + ":" + str(t1[4]) + ":" + str(t1[5])
-        diff = datetime.strptime(s1,'%H:%M:%S') - datetime.strptime(s2,'%H:%M:%S')
+        diff = datetime.datetime.strptime(s1,'%H:%M:%S') - datetime.datetime.strptime(s2,'%H:%M:%S')
         return diff.seconds
 
 
@@ -205,26 +223,32 @@ class Character():
         end = page.find("';", start)
         soup = BeautifulSoup(page[start:end])
         tags = soup.find_all('li')
-
-        self.hunger = hungerTable[re.sub(game_strings.scrape['hunger'], '', tags[1].text.lower().strip())]
-        self.health = healthTable[re.sub(game_strings.scrape['health'], '', tags[2].text.lower().strip())]
-
-        if self.health == 0: #you are dead
+        arr = []
+        for tag in tags:
+            arr.append(tag.text.lower().strip())
+        
+        if arr[1] == "you are dead": #you are dead
             self.visit(game_url+"Action.php?action=36") #Resurrect 
             return self.update_characteristics() #do everything again
+
+        self.hunger = hungerTable[re.sub(game_strings.scrape['hunger'], '', arr[1])]
+        self.health = healthTable[re.sub(game_strings.scrape['health'], '', arr[2])]
+
 
         soup = BeautifulSoup(page)
         self.activity = soup.find('div', {'class':'elementActivite'}).text.lower().strip()
         self.activity = re.sub(game_strings.scrape['activity'], '', self.activity)
 
-        if self.activity != game_strings.activity['none'] and self.activity != game_strings.activity['travel']:
-            self.activity_remaining = soup.find('div', {'class' : 'tempsRestant'}).text.strip()
-            m = re.search('\d+:\d+', self.activity_remaining)
+        
+        self.activity_remaining = soup.find('div', {'class' : 'tempsRestant'}).text.strip()
+        m = re.search('\d+:\d+', self.activity_remaining)
+
+        if m != None:
             arr =  m.group(0).split(':')
             self.activity_remaining = int(arr[0])*60 + int(arr[1])
         elif self.activity == game_strings.activity['none']:
             self.activity_remaining = 0
-        else: #Traveling
+        else: #Non Desync activity
             self.activity_remaining = int(self.get_seconds_till_reset()/60)
 
 
@@ -340,7 +364,7 @@ class Character():
         self.update_inventory()
         if type(item) is str:
             if item not in item_map:
-                char.logger.write(log() + " Item not in db - " + str(item) + "\n")
+                self.logger.write(log() + " Item not in db - " + str(item) + "\n")
                 return None
             item = item_map[item]
         if self.inventory[item]:
@@ -352,36 +376,36 @@ class Character():
 
 
 
-    def use(self, item, times=1):
+    def use(self, item, quantity=1):
         """
         Uses an item in the inventory 
         Arguments:
         - `br`: Browser
         - `item`: Name of the item to use
-        - `times`: number of times to use. -1 to use all
+        - `quantity`: number of quantity to use. -1 to use all
         """
         name = item
         self.update_inventory()
         if type(item) is str:
             if item not in item_map:
-                char.logger.write(log() + " Item not in db - " + str(item) + "\n")
+                self.logger.write(log() + " Item not in db - " + str(item) + "\n")
                 return None
-            item = item_map[item]
+            item = item_map[item] #get the item code
 
-        if self.inventory[item] < times:
-            char.logger.write(log() + " Item not available in sufficient quantity. item: " + str(item) + " quantity: " + str(quantity) + "\n")
+        if self.inventory[item] < quantity:
+            self.logger.write(log() + " Item not available in sufficient quantity. item: " + str(item) + " quantity: " + str(quantity) + "\n")
             return None
             
-        if times == -1:
-            times = self.inventory[item]
+        if quantity == -1:
+            quantity = self.inventory[item]
 
 
         url = game_url + "Action.php?action=6&type=" + str(item) + "&IDParametre=0"
-        while times > 0:
+        while quantity > 0:
             #print url #for debug
             self.logger.write(log() + " Using item: " + str(name) + "\n")
             self.br.open(url, timeout=35)
-            times-=1
+            quantity-=1
         self.refresh()
 
         
@@ -419,6 +443,7 @@ class Character():
 
 
 
+
     def transfer_to_home(self, item, quantity=1):
         """Transfers a specified item to the character's home
         Arguments:
@@ -430,7 +455,7 @@ class Character():
         if type(item) is str:
             if item not in item_map: 
                 raise ValueError("Item not in db - " + str(item))
-            item = item_map[item]
+            item = item_map[item] #get the item code
 
         self.update_inventory()
         if  (item and self.inventory[item] < quantity) or (~item and self.money < quantity):
@@ -454,6 +479,7 @@ class Character():
 
 
 
+
     def level_up_1(self, field=None):
         """
         Levels up the character to level 1
@@ -464,12 +490,69 @@ class Character():
 
         soup = BeautifulSoup(self.visit(town_url).read())
         level_up_url  = town_url if "ville" in soup.title.text.lower() else province_url
-        page = char.visit(level_up_url).read()
+        page = self.visit(level_up_url).read()
         if type(field) is str:
             field = field_map[field]
         if "?action=16" in page:
             if field == None:
-                char.visit(game_url+"Action.php?action=16", urllib.urlencode({'niveau':'1', 'passage':'become a vagrant', 'usage':'99'}))
+                self.visit(game_url+"Action.php?action=16", urllib.urlencode({'niveau':'1', 'passage':'become a vagrant', 'usage':'99'}))
             else:
-                char.visit(game_url+"Action.php?action=16", urllib.urlencode({'niveau':'1', 'passage':'Level up 1', 'usage':str(field)}))
+                self.visit(game_url+"Action.php?action=16", urllib.urlencode({'niveau':'1', 'passage':'Level up 1', 'usage':str(field)}))
 
+
+
+    def donate_to_church(self,):
+        """
+        Donates 5q to the church
+        Arguments:
+        - `self`:
+        """
+        old = self.reputation
+        self.visit(donate_to_church_url)
+        self.update_stats()
+        self.logger.write(log() + " Donated 5 to the church")
+        if old < self.reputation:
+            self.logger.write( "..got 1 reputation point!!")
+        self.logger.write("\n")
+
+
+
+
+    def donate_to_town(self, money=None):
+        """
+        Donates money to the townhall
+        Arguments:
+        - `self`:
+        - `money`:
+        """
+        
+        if money == None:
+            return
+        old = int(self.money)
+        money = min(min(50, money), old)
+        res = self.visit(donate_to_town_url, urllib.urlencode({'somme':str(money)})).read()
+        self.update_inventory()
+        if old > int(self.money):
+            self.logger.write(log() + " Donated "  + str(money) + " to the calpulli/townhall\n")
+        else:
+            self.logger.write(log() + BeautifulSoup(res).find("div", {"class":"pseudopopup"}).text + "\n")
+
+
+    def donate_to_province(self, money=None):
+        """
+        Donates money to the province
+        Arguments:
+        - `self`:
+        - `money`:
+        """
+        
+        if money == None:
+            return
+        old = int(self.money)
+        money = min(min(50, money), old)
+        self.visit(donate_to_province_url, urllib.urlencode({'somme':str(money)}))
+        self.update_inventory()
+        if old > int(self.money):
+            self.logger.write(log() + " Donated "  + str(money) + " to the province/county\n")
+        else:
+            self.logger.write(log() + BeautifulSoup(res).find("div", {"class":"pseudopopup"}).text + "\n")

@@ -305,7 +305,7 @@ class MinCostDiet():
 
 
 
-class Priority_Diet():
+class PriorityDiet():
     """
     To be used if you want to prioritize eating certain food items (for raising stats)
 
@@ -330,6 +330,8 @@ class Priority_Diet():
         self.priority = priority
         self.hunger = hunger
         self.fallback = fallback
+
+
 
     def eat(self):
         """
