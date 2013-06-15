@@ -173,6 +173,7 @@ class Corn(Field):
         States whether someone can be hired to work on your
         field.
         """
+        self.refresh()
         return (self.day == 1 or self.day == 7) and not self.hiring and not self.harvesting
 
     def prep_home_inventory(self, autobuy=True):
@@ -221,6 +222,7 @@ class Wheat(Field):
         States whether someone can be hired to work on your
         field.
         """
+        self.refresh()
         return (self.day == 1 or self.day == 2 or self.day == 10) and not self.hiring and not self.harvesting
 
     def prep_home_inventory(self, autobuy=True):
@@ -269,6 +271,7 @@ class Vegetable(Field):
         States whether someone can be hired to work on your
         field.
         """
+        self.refresh()
         return (self.day == 5) and not self.hiring and not self.harvesting
 
     def prep_home_inventory(self, autobuy=True):
