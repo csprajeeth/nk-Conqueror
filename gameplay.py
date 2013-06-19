@@ -28,7 +28,7 @@ def L0to1(char, field):
         pass
     elif char.money > 70 and char.reputation < 5:
         if activity.work_at_church(char):
-            char.donate_to_chuch()
+            char.donate_to_church()
     elif activity.work_in_mine(char, duration=1) or activity.apply_for_job(char) or activity.apply_for_imw(char, duration=1):
        pass
     

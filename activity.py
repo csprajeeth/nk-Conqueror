@@ -3,6 +3,8 @@ import time
 import re
 import townhall
 import resource
+import travel
+import university
 
 from townhall import Job
 from init import log
@@ -32,7 +34,7 @@ def sample_job_evaluator(jobs):
 
 def apply_for_job(char, evaluator = sample_job_evaluator):
     """
-    Applies for a player posted job in the townhall
+    Apply for a player posted job in the townhall
     Arguments:
     - `char`: The character object
     - `evaluator`: 
@@ -57,7 +59,7 @@ def apply_for_job(char, evaluator = sample_job_evaluator):
 
 def work_in_mine(char, duration=1, mine=None):
     """
-    Performs the activity of mining. You can set the duration of the activity
+    Perform the activity of mining. You can set the duration of the activity
     as well as which mine(node number) to work in
     Arguments:
     - `mine`: the node number of the mine
@@ -90,8 +92,8 @@ def work_in_mine(char, duration=1, mine=None):
             for url in mine_list:
                 res = char.visit(url, urllib.urlencode({'duree':str(duration)})).read()
                 if "overcrowded" in res.lower():
-                    m = re.search("(n=)(\d+)",url,re.IGNORECASE)
-                    char.logger.write(log() + " Mine " + m.group(2) + " is full\n")
+                    m = re.search("(&n=)(\d+)",url,re.IGNORECASE)
+                    char.logger.write(log() + " The mine on node " + m.group(2) + " is full\n")
         else:
             for url in mine_list:
                 if "n="+str(mine) in url:
@@ -109,7 +111,7 @@ def work_in_mine(char, duration=1, mine=None):
 
 def apply_for_imw(char, duration=1):
     """
-    Applies for IMW
+    Apply for IMW
     Arguments:
     - `duration`: Duration of activity in hours
     """
@@ -142,7 +144,7 @@ def apply_for_imw(char, duration=1):
 
 
 def pick_herbs(char, duration=2):
-    """Picks medicinal herbs
+    """Pick medicinal herbs
     ARGUMENTS:
     -`char`: The character object
     -`duration`: Duration of the activity in hours
@@ -166,7 +168,7 @@ def pick_herbs(char, duration=2):
 
 def look_for_rare_materials(char):
     """
-    Searches on the node for rare materials 
+    Search on the node for rare materials 
     Arguments:
     - `char`: The character object
     """
@@ -176,7 +178,7 @@ def look_for_rare_materials(char):
     page = char.visit(outskirts_url).read()
     m = re.search("Action.php?action=275", page, re.IGNORECASE)
     if m == None:
-        char.logger.write(log() + " Searching for rare materials is not available on this node\n")
+        char.logger.write(log() + " There are no rare materials on this node\n")
         return False
     char.visit(game_url+"Action.php?action=275")
     result = char.is_working()
@@ -185,29 +187,36 @@ def look_for_rare_materials(char):
 
 
 
-def travel(char, dst):
+def travel(char, dst, exclude_nodes = []):
     """
     Makes the character travel to the given destination
     Arguments:
-    - `char`: The character object
-    - `dst`: The node number to travel to
+    - `char`: The character object.
+    - `dst`: The node number/town to travel to. This need not be the immediate neighbour.
+    - `exclude_nodes`: The nodes to avoid during the travel. Useful incase you know
+                       robbers or hostile armies are on the node.
+                       These must be node numbers.
     """
+
     if char.is_working():
         return False
     if char.load > char.maxload:
         char.logger.write(log() + " Unable to travel due to inventory overload: " + str(char.load) + "/" + str(char.maxload) + "\n")
         return False
 
-    char.visit(game_url+"Action.php?action=68", urllib.urlencode({"n":str(dst)}))
+    destination = travel.get_next_hop(char, dst, exclude_nodes)
+    if destination == None: 
+        return False
+    char.visit(game_url+"Action.php?action=68", urllib.urlencode({"n":str(destination)}))
     result = char.is_working()
-    char.logger.write(log() + " Traveling to node " + str(dst) + " - " + str(result) + " (" + str(char.activity) + ")" + "\n")
+    char.logger.write(log() + " Traveling to node " + str(destination) + " - " + str(result) + " (" + str(char.activity) + ")" + "\n")
     return result
 
 
 
 def work_at_church(char):
     """
-    Makes the character work at church
+    Work in the church
     """
     if char.is_working():
         return False
@@ -220,7 +229,7 @@ def work_at_church(char):
 
 def retreat(char):
     """
-    Puts the character into retreat
+    Put the character into retreat
     """
     if char.is_working():
         return False
@@ -233,7 +242,7 @@ def retreat(char):
 
 def apply_for_militia(char):
     """
-    Applies for militia job
+    Apply for militia job
     Arguments:
     - `char`:
     """
@@ -254,7 +263,6 @@ def apply_for_militia(char):
 
 def harvester(char, rsc):
     """
-    Harvests resource.
     Arguments:
     - `char`: The character object
     - `rsc`: The resource to be harvested
@@ -312,7 +320,7 @@ def harvester(char, rsc):
 
 def harvest_resource(char, autousetool=True, autobuytool=False, price=None):
     """
-    Harvests the clan resource (Lake/Orchard/Forest)
+    Harvest the clan resource (Lake/Orchard/Forest)
     Arguments:
     - `char`: The character object
     """
@@ -330,3 +338,42 @@ def harvest_resource(char, autousetool=True, autobuytool=False, price=None):
         return False
 
 
+
+def attend_lessons(char, subjects=[]):
+    """
+    Attend a class at the university.
+    Arguments:
+    - `char`: The character object
+    - `subjects`: The subjects to study. This can be a list.
+                  The subject at the beggining of the list gets more priority.
+                  If no subject is specified, then study any subject being taught.
+
+    Ex: attend_lessons(char, ["empire administration", "currency"])
+        -- makes the character attend empire administration or currrency but empire administration is
+           preferred if both are available.
+    """
+
+    if char.is_working():
+        return False
+    if type(subjects) is not list:
+        subjects = [subjects]
+    subjects = [subject.lower() for subject in subjects]
+
+    all_classrooms = university.get_classrooms(char)
+    rooms = []
+
+    if len(subjects) == 0:
+        rooms = [room for room in all_classrooms if room.free_places > 0]
+    else :
+        for subject in subjects:
+            subject_rooms = [room for room in all_classrooms if room.subject == subject and room.free_places > 0]
+            rooms += subject_rooms
+    
+    for room in rooms:
+        char.visit(game_url + "Action.php?action=79&type=3&id=" + str(room.ID), urllib.urlencode({}))
+        if char.is_working():
+            char.logger.write(log() + " Attending Lesson: " + room.subject + " taught by " + room.teacher + " (" + str(char.activity) +")\n")
+            return True
+
+    char.logger.write(log() + " Could not attend lessons :(\n")
+    return False

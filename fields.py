@@ -36,18 +36,26 @@ def get_field_object(char, number):
     if "Action.php?action=17" in text: #we don't have the land
         return None
 
-    m = re.search("(champ)(\d+)(-)(\d+).gif", text, re.IGNORECASE)
+    m = re.search("(champ)(\d+)(.*gif)", text, re.IGNORECASE)
     if m != None: #Its a field
         field_code = int(m.group(2))
-        if field_code == 2:
-            return Corn(char, number)
+        if field_code == 0: #No field. (Needs reset)
+            return Land(char, number)
         if field_code == 1:
             return Wheat(char, number)
+        if field_code == 2:
+            return Corn(char, number)
+        if field_code == 5:
+            print "PIGS RANCH!!"
+            return None
         if field_code == 6:
             return Vegetable(char, number)
+        if field_code == 7:
+            return Agave(char, number)
 
     return None
         
+
 
 class Land(object):
     """
@@ -70,6 +78,15 @@ class Land(object):
         """
         pass
 
+
+    def reset(self, field):
+        """
+        Resets the usage of the current land
+        to supplied argument (field).
+        """
+        field_code = field_map[field]
+        self.char.visit(game_url + "Action.php?action=12&champ="+str(self.number-1), urllib.urlencode({"reinit":"Reset", "usage":"0"}))
+        self.char.visit(game_url + "Action.php?action=12&champ="+str(self.number-1), urllib.urlencode({"usage":str(field_code)}))
         
 
 
@@ -125,6 +142,7 @@ class Field(Land):
 
     def hire(self, stat=None, wage=None, autobuy=True):
         """
+        Posts an advertisement at the townhall/calpulli.
         """
         if self.can_hire():
             if not self.prep_home_inventory(autobuy):
@@ -148,14 +166,17 @@ class Field(Land):
 
             if wage > int(self.char.money):
                 self.char.logger.write(log() + " Don't have enough money to hire...QUIT HIRING\n")
-                return False #we dont have enough money to pay
+                return False 
 
 
-            url = game_url + "Action.php?action=18&champ=" + str(self.number-1) #check if this assumption is right
+            url = game_url + "Action.php?action=18&champ=" + str(self.number-1) 
             self.char.visit(url, urllib.urlencode({'actionChamp':str(actionChamp), 'carac':str(carac),
                                               'embauche':str(embauche), 'salaire':str(wage),
                                               'qualification':str(stat)}))
             self.char.logger.write(log() + " Posted a job for hiring a worker to work on field " + str(self.number) + "\n")
+
+
+
 
 
 
@@ -184,7 +205,7 @@ class Corn(Field):
         self.char.home.update_inventory()
         if self.day == 1:
             if self.char.home.inventory[52] == 0 and self.char.inventory[52] == 0 and autobuy:
-                market.buy(self.char, "bean")
+                market.buy(self.char, "corn")
             if self.char.home.inventory[52] == 0 and self.char.inventory[52]:
                 self.char.transfer_to_home(52)
             if self.char.home.inventory[52]:
@@ -233,7 +254,7 @@ class Wheat(Field):
         self.char.home.update_inventory()
         if self.day == 2:
             if self.char.home.inventory[56] == 0 and self.char.inventory[56] == 0 and autobuy:
-                market.buy(self.char, "bean")
+                market.buy(self.char, "wheat")
             if self.char.home.inventory[56] == 0 and self.char.inventory[56]:
                 self.char.transfer_to_home(56)
             if self.char.home.inventory[56]:
@@ -295,3 +316,99 @@ class Vegetable(Field):
     def manage(self, stat=None, wage=None, autobuy=True):
         self.char.home.transfer_to_char(64, quantity=-1)
         self.hire(stat, wage, autobuy)
+
+
+
+class Agave(Field):
+    """
+    This class represents an agave field.
+    """
+    
+    def __init__(self, char, number):
+        self.type = "agave"
+        super(Agave, self).__init__(char, number)
+        
+    def can_hire(self,):
+        self.refresh()
+        return (self.day in [1,4,5,6]) and not self.harvesting and not self.hiring
+        
+
+    def prep_home_inventroy(self, autobuy=True):
+        return True
+
+    def wage_recommender(self, ):
+        return 19
+
+    def stat_recommender(self, ):
+        return 19
+
+    def manage(self, stat=None, wage=None, autobuy=True):
+        #self.char.home.transfer_to_char(64, quantity=-1)
+        self.hire(stat, wage, autobuy)
+
+
+
+class Hibiscus(Field):
+    """
+    This class represents a Hibiscus field.
+    """
+    
+    def __init__(self, char, number):
+        self.type = hibiscus
+        super(Hibiscus, self).__init__(char, number)
+        
+    def can_hire(self):
+        self.refresh()
+        return (self.day in [5]) and not self.harvesting  and not self.hiring
+
+    def prep_inventory(self):
+        return True
+
+    def recommend_wage(self):
+        return 19
+
+    def recommend_stat(self):
+        return 19
+
+    def manage(self, stat=None, wage=None, autobuy=True):
+        self.hire(stat, wage, autobuy)
+        
+
+        
+
+
+class Ranch(Land):
+    """
+    """
+
+    class Animal(object):
+        """
+        This class represents the animals of a ranch
+        Attributes shared by all ranch animals:
+        1. Age (in days)
+        2. Health (yield depends on this)
+        3. Hungry (True/False)
+        """
+
+        def __init__(self, ):
+            self.age = None
+            self.health = None #(0-8) -- (Dying-American Style)
+            self.hungry = None
+
+    
+
+    def __init__(self, char, number):
+
+        super(Ranch, self).__init__(char, number)
+        self.quality = None
+        self.hiring = None
+        self.slaughtering = None
+        self.animals = [Animal()] * 4
+        self.refresh()
+
+
+    def refresh(self,):
+        """
+        Refreshes the attributes of the ranch.
+        """
+        

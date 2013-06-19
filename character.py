@@ -56,13 +56,17 @@ class Character():
 
 
     def get_browser(self):
-        """Returns the browser object related to the character
+        """
+        Returns the browser object related to the character
         """
         return self.br
 
 
 
     def login(self):
+        """
+        Logs in to the game server.
+        """
 
         while self.is_server_under_maint():
             time.sleep(120)
@@ -149,7 +153,6 @@ class Character():
 
 
 
-
     def is_server_under_maint(self):
         """
         Returns True if server is under maintainance.
@@ -198,10 +201,10 @@ class Character():
         Returns the number of seconds left
         till the next reset
         """
-        s1 = "9:15:00" #reset time in GMT
+
         t1 = self.get_current_time()
         s2 = str(t1[3]) + ":" + str(t1[4]) + ":" + str(t1[5])
-        diff = datetime.datetime.strptime(s1,'%H:%M:%S') - datetime.datetime.strptime(s2,'%H:%M:%S')
+        diff = datetime.datetime.strptime(server_maintainance_end,'%H:%M:%S') - datetime.datetime.strptime(s2,'%H:%M:%S')
         return diff.seconds
 
 
@@ -227,9 +230,12 @@ class Character():
         for tag in tags:
             arr.append(tag.text.lower().strip())
         
-        if arr[1] == "you are dead": #you are dead
+        if "dead" in arr[1]: #you are dead
             self.visit(game_url+"Action.php?action=36") #Resurrect 
             return self.update_characteristics() #do everything again
+        if "prison" in arr[1]: #you are in prison
+            self.visit(game_url+"Action.php?action=38") #get out of prison
+            return self.update_characteristics()
 
         self.hunger = hungerTable[re.sub(game_strings.scrape['hunger'], '', arr[1])]
         self.health = healthTable[re.sub(game_strings.scrape['health'], '', arr[2])]
@@ -284,7 +290,7 @@ class Character():
         for i in range(1,len(no_of_items)):
             item_code = item_map[item_description[i+1].text.lower()]
             self.inventory[item_code] = int(no_of_items[i].text)
-            
+
         
 
     def update_stats(self):
@@ -535,7 +541,8 @@ class Character():
         if old > int(self.money):
             self.logger.write(log() + " Donated "  + str(money) + " to the calpulli/townhall\n")
         else:
-            self.logger.write(log() + BeautifulSoup(res).find("div", {"class":"pseudopopup"}).text + "\n")
+            self.logger.write(log() + " " +  BeautifulSoup(res).find("div", {"class":"pseudopopup"}).text + "\n")
+
 
 
     def donate_to_province(self, money=None):
@@ -550,9 +557,10 @@ class Character():
             return
         old = int(self.money)
         money = min(min(50, money), old)
-        self.visit(donate_to_province_url, urllib.urlencode({'somme':str(money)}))
+        res = self.visit(donate_to_province_url, urllib.urlencode({'somme':str(money)}))
         self.update_inventory()
         if old > int(self.money):
             self.logger.write(log() + " Donated "  + str(money) + " to the province/county\n")
         else:
-            self.logger.write(log() + BeautifulSoup(res).find("div", {"class":"pseudopopup"}).text + "\n")
+            self.logger.write(log() + " " + BeautifulSoup(res).find("div", {"class":"pseudopopup"}).text + "\n")
+

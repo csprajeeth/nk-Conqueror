@@ -19,7 +19,7 @@ hungerTable = {
 "you\\'re veryhungry":2,
 "you\\'re very hungry":2,
 "you\\'re very\\nhungry":2,
-"you're very very hungry":3
+"you\\'re starving":3
 }
 
 scrape_strings = {
@@ -43,7 +43,7 @@ activity_strings = {
 "lake":'fishing',
 "orchard":'picking fruit',
 "forest":'cut wood',
-"search":"Search for valuable resources",
+"search":"search for valuable resources",
 }
 
 resource_strings = {
@@ -248,7 +248,95 @@ r_food_map = {
 }
 
 node_map = {
-"itzohcan":17
+#tepeyecac (the bot's birth place)
+"itzohcan":17,
+"tecalco":4,
+"tecmilco":50,
+"ehuacalco":12,
+"quecholac":8,
+"huaxtepec":48,
+
+#quiyauhteopan
+"toliman":73,
+"cualac":71,
+"mitzinco":69,
+"olinallan":67,
+"ichcatlan":65,
+"tepoztitlan":63,
+"ahuatzitzinco":61,
+
+#yohualtepec 
+"cuauhtinchan":28,
+"tzilacaapan":26,
+"tecamachalco":33,
+"huehuehtlan":35,
+
+#teotitlan (the land of tits)
+"cuayamecalco":117,
+"tehuacan":220,
+"tepelmeme":112,
+"ajalpan":115,
+#tequixtepec - node number ??
+"coyotepec":142,
+
+#chalco
+"xochimilcatzinco":21,
+"cuauhtlan":19,
+"coacalco":55,
+#xaloztoc does not make an appearence due to name conflict
+#with another one in orientale
+
+#cuauhnahuac (how the fk do you pronounce this?)
+"chimalco":206,
+"zacatepec":204,
+"amocoztitlan":208,
+"atl poyeccan":200,
+"xiuhtepec":211,
+
+#d'Acolhuahcan
+"ameyalco":154,
+"tenochtitlan":161,
+"tizatepec":151,
+"olac":166,
+"xicco":168,
+"matixco":156,
+
+#occidentale
+"epatlan":1,
+"nopaluca":86,
+"cuamantzingo":76,
+"tulancingo":97,
+"ixtenco":102,
+"mazapa":99,
+"zotoluca":174,
+"sultepec":175,
+"amecameca":78,
+
+#metztitlan
+"coyol":145,
+"huatepango":147,
+"poxtatla":140,
+"ixhuatlan":136,
+"acuimantla":133,
+"yatipan":138,
+"ixmiquilpan":128,
+
+#cuauhtochco
+"olintla":192,
+"ahuilizapan":186,
+"acatic":184,
+"misantla":181,
+"tototlan":188,
+
+#orientale
+"huiloapan":80,
+"tlaxcala":217, #love this name
+"ixtacuixtla":83,
+"zoquiapan":92,
+"huamantla":105,
+"axotla":110,
+"calpan":107,
+"xlcotencatl":125,
 }
 
 
@@ -256,8 +344,19 @@ field_map = {
 "maize":1,
 "bean":2,
 "beans":2,
+"turkey":3,
+"turkeys":3,
+"rabbit":4,
+"rabbits":4,
+"pig":5,
+"pigs":5,
+"peccary":5,
+"peccaries":5,
 "vegetables":6,
-"vegetable":6
+"vegetable":6,
+"agave":7,
+"agaves":7,
+"hibiscus":9,
 }
 
 
