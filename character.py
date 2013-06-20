@@ -564,3 +564,27 @@ class Character():
         else:
             self.logger.write(log() + " " + BeautifulSoup(res).find("div", {"class":"pseudopopup"}).text + "\n")
 
+
+
+    def show_inbox(self):
+        """
+        Writes the inbox to the logger.
+        Arguments:
+        - `self`:
+        """
+        page = self.visit(my_url).read()
+        s1 = "textePage[2]['Texte'] = '"
+        s2 = "';"
+        start  = page.find(s1)
+        end = page.find(s2, start)
+        soup = BeautifulSoup(page[start:end])
+        mails = soup.find_all("li")
+        self.logger.write(log() + " Mails for " + self.name + "\n")
+        for mail in mails:
+            a = mail.find("a")
+            if a != None:
+                mail.a.extract()
+                self.logger.write(a.text + " [" + mail.text.strip() + "]\n")
+            else:
+                self.logger.write(mail.text+"\n")
+
