@@ -187,7 +187,7 @@ def look_for_rare_materials(char):
 
 
 
-def travel(char, dst, exclude_nodes = []):
+def travel_on_road(char, dst, exclude_nodes = []):
     """
     Makes the character travel to the given destination
     Arguments:

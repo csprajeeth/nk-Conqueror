@@ -210,6 +210,8 @@ class Corn(Field):
                 self.char.transfer_to_home(52)
             if self.char.home.inventory[52]:
                 return True
+            return False
+        return True
         
     def wage_recommender(self,):
         """
@@ -259,6 +261,8 @@ class Wheat(Field):
                 self.char.transfer_to_home(56)
             if self.char.home.inventory[56]:
                 return True
+            return False
+        return True
 
     def wage_recommender(self,):
         """
