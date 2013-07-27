@@ -1,3 +1,4 @@
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/e519a9efb14340221faff56babed2b6c "githalytics.com")](http://githalytics.com/csprajeeth/nk-Conqueror)
 nk-Conqueror
 ============
 
