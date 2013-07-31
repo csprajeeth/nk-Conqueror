@@ -7,3 +7,5 @@ nk-Conqueror
 Welcome page : https://github.com/csprajeeth/nk-Conqueror/wiki/Welcome
 
 Forums : http://www.nkbot.freeforums.net
+
+Github Wiki : https://github.com/csprajeeth/nk-Conqueror/wiki/
