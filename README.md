@@ -5,4 +5,5 @@ nk-Conqueror
 'Conqueror'  - The first public bot for nativekingdoms game.
 
 Welcome page : https://github.com/csprajeeth/nk-Conqueror/wiki/Welcome
-Forums : https://www.nkbot.freeforums.net
+
+Forums : http://www.nkbot.freeforums.net
