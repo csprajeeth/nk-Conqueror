@@ -11,3 +11,7 @@ Forums : http://www.nkbot.freeforums.net
 Github Wiki : https://github.com/csprajeeth/nk-Conqueror/wiki/
 
 Video of the bot : http://www.youtube.com/watch?v=CPmkKQg2pnw
+
+
+RK-Conqueror --- Releasing soon 
+Guide to MultiAccount Botting - Releasing soon
