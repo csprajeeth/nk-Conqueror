@@ -13,6 +13,6 @@ Github Wiki : https://github.com/csprajeeth/nk-Conqueror/wiki/
 Video of the bot : http://www.youtube.com/watch?v=CPmkKQg2pnw
 
 
-RK-Conqueror --- Releasing soon 
+RK-Conqueror --- Released!!! https://github.com/csprajeeth/rk-bot 
 
 Guide to MultiAccount Botting - Releasing soon
