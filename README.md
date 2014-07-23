@@ -1,4 +1,4 @@
-[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/ef2bdfc89af4c253219580bdbb3fb018 "githalytics.com")](http://githalytics.com/csprajeeth/nk-Conqueror)
+[![githalytics.com alpha](https://cruel-carlota.gopagoda.com/ef2bdfc89af4c253219580bdbb3fb018 "githalytics.com")](http://githalytics.com/csprajeeth/nk-Conqueror)
 nk-Conqueror
 ============
 
